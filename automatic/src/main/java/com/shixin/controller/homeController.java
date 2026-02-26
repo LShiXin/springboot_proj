@@ -8,7 +8,7 @@ import com.shixin.service.ServerStatusService;
 
 
 @RestController
-public class homeController {
+public class HomeController {
 
     @GetMapping("/home")
     public String getMethodName() {

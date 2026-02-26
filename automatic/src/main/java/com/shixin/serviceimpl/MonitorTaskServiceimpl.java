@@ -11,7 +11,7 @@ import jakarta.transaction.Transactional;
 
 @Service
 @Transactional
-public class MonitorTaskService {
+public class MonitorTaskServiceimpl {
 
     @Autowired
     private MonitorTaskRepository monitorTaskRepository;

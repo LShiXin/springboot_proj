@@ -10,6 +10,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -27,6 +29,12 @@ public class MonitorTask {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * 所属用户（多对一）
+     */
+    @ManyToOne(optional = false)  // 假设任务必须属于某个用户，设为 false
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
     /**
      * 任务名称
      */
@@ -124,6 +132,9 @@ public class MonitorTask {
     public String getName() {
         return name;
     }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
     public void setName(String name) {
         this.name = name;

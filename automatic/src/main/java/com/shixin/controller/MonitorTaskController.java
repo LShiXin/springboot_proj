@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.shixin.serviceimpl.MonitorTaskService;
+import com.shixin.serviceimpl.MonitorTaskServiceimpl;
 
 
 
@@ -14,7 +14,7 @@ import com.shixin.serviceimpl.MonitorTaskService;
 public class MonitorTaskController {
 
     @Autowired
-    private MonitorTaskService monitorTaskService;
+    private MonitorTaskServiceimpl monitorTaskService;
 
     @GetMapping("/monitottask/getall")
     public String getMethodName() {
