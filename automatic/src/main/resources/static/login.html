@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统登录</title>
+    <!-- 引入CSS样式文件 -->
+    <link rel="stylesheet" href="./css/login.css">
+</head>
+<body>
+    <div class="login-container">
+        <h2 class="login-title">系统登录</h2>
+        <div class="form-group">
+            <label for="username">用户名</label>
+            <input type="text" id="username" class="form-input" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+            <label for="password">密码</label>
+            <input type="password" id="password" class="form-input" placeholder="请输入密码">
+        </div>
+        <div class="btn-group">
+            <button id="loginBtn" class="btn primary-btn">登录</button>
+            <button id="statusBtn" class="btn secondary-btn">获取服务状态</button>
+        </div>
+        <!-- 提示信息区域 -->
+        <div id="message" class="message"></div>
+    </div>
+
+    <!-- 引入JS脚本文件 -->
+    <script src="./js/login.js"></script>
+</body>
+</html>
