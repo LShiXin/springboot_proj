@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统首页</title>
+    <!-- 引入Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <!-- 引入图标库 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/iconfont-iconpark@1.4.2/iconpark.css">
+    <!-- 引入CSS样式文件 -->
+    <link rel="stylesheet" href="../css/index.css">
+</head>
+<body>
+    <!-- Vue挂载容器 -->
+    <div id="app">
+        <!-- 顶部导航栏 -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="logo">系统管理平台</h1>
+            </div>
+            <div class="header-right">
+                <span class="welcome-text">欢迎：<span class="username">{{ username }}</span></span>
+                <button class="logout-btn" @click="handleLogout">退出登录</button>
+            </div>
+        </header>
+
+        <!-- 主体内容区域 -->
+        <main class="main-container">
+            <!-- 左侧侧边栏（占1/4宽度） -->
+            <aside class="sidebar">
+                <div class="sidebar-title">功能菜单</div>
+                <ul class="menu-list">
+                    <!-- Vue循环渲染菜单，绑定点击事件加载对应页面 -->
+                    <li 
+                        class="menu-item" 
+                        :class="{ active: activeMenu === item.title }"
+                        v-for="item in menuList" 
+                        :key="item.title"
+                        @click="loadPage(item.path, item.title)"
+                    >
+                        <i class="iconpark" :class="item.icon + ' menu-icon'"></i>
+                        <span>{{ item.title }}</span>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- 右侧内容区（占3/4宽度）：改为动态加载容器 -->
+            <section class="content-area">
+                <!-- 加载中提示 -->
+                <div v-if="isLoading" class="loading">加载中...</div>
+                <!-- 动态页面容器 -->
+                <div id="pageContainer" class="page-container"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 引入Vue逻辑文件 -->
+    <script src="../js/index.js"></script>
+</body>
+</html>

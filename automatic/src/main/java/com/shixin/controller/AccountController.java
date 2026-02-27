@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.shixin.entity.ApiResponse;
 import com.shixin.entity.JwtUtil;
 import com.shixin.entity.User;
-import com.shixin.serviceimpl.UserServiceImpl;
+import com.shixin.service.UserService;
 
 @RestController
 public class AccountController {
     @Autowired
-    private UserServiceImpl userService;
+    private UserService userService;
 
     @Autowired
     private JwtUtil  jwtUtil;

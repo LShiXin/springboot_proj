@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 showMessage('登录成功！', 'success');
                 localStorage.setItem('token', data.data.token);
                 // 可选：登录成功后跳转
-                // window.location.href = './index.html';
+                window.location.href = './index.html';
             } else {
                 // 登录失败
                 showMessage('登录失败：' + (data.message || '未知错误'), 'error');

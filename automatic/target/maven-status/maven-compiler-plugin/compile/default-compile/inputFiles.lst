@@ -4,12 +4,15 @@ C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\entity\Mo
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\serviceimpl\RedisServceImpl.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\repository\MonitorTaskRepository.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\serviceimpl\ServerStatusServiceImpl.java
+C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\service\UserService.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\serviceimpl\MonitorTaskServiceimpl.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\repository\UserRepository.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\entity\MonitorUrl.java
+C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\service\RedisService.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\controller\UserController.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\entity\ApiResponse.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\interceptor\JwtInterceptor.java
+C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\service\MonitorTaskService.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\config\WebConfig.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\controller\MonitorTaskController.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\repository\MonitorUrlRepository.java
