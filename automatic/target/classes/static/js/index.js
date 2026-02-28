@@ -4,13 +4,12 @@ createApp({
     data() {
         return {
             username: localStorage.getItem('username') || (localStorage.getItem('token') ? '用户' : '游客'),
-            activeMenu: '首页',
+            activeMenu: '',
             isLoading: false, // 加载状态
             menuList: [
 
                 { title: '首页', icon: 'icon-home', path: './index_pages/home/home.html' },
                 { title: '任务管理', icon: 'icon-user', path: './index_pages/monitor_manager/monitor_manager.html' },
-
                 { title: '订单管理', icon: 'icon-order', path: './index_pages/building/building.html' },
                 { title: '数据统计', icon: 'icon-chart', path: './index_pages/building/building.html' },
                 { title: '系统设置', icon: 'icon-setting', path: './index_pages/building/building.html' },
@@ -31,6 +30,11 @@ createApp({
         },
         // 加载右侧页面核心方法
         async loadPage(pagePath, menuTitle) {
+            // 如果点击的是当前激活菜单，则不重复加载页面
+            console.log(this.activeMenu);
+            if (this.activeMenu === menuTitle) {
+                return;
+            }
             // 1. 更新激活菜单
             this.activeMenu = menuTitle;
             // 2. 显示加载状态
@@ -47,7 +51,7 @@ createApp({
                 container.innerHTML = html;
 
                 // 5. 执行子页面中的脚本（如需）
-                // this.executePageScripts(container);
+                this.executePageScripts(container);
             } catch (err) {
                 console.error('页面加载错误:', err);
                 container.innerHTML = `<div class="page-card"><div class="page-title">加载失败</div><p style="color:#f56c6c;">${err.message}</p></div>`;
@@ -116,6 +120,7 @@ createApp({
         mounted() {
             this.getUserInfo(); // 可选
             this.loadPage('./index_pages/home/home.html', '首页');// 默认加载首页
+            console.log(this.activeMenu)
         }
     
 }).mount('#app');

@@ -3,6 +3,7 @@ package com.shixin.service;
 import java.util.List;
 
 import com.shixin.entity.MonitorTask;
+import com.shixin.entity.MonitorTaskListDTO;
 
 public interface MonitorTaskService {
      // 获取所有监控任务
@@ -15,4 +16,8 @@ public interface MonitorTaskService {
     MonitorTask getTaskById(Long id);
     // 保存或更新任务
     MonitorTask saveOrUpdateTask(MonitorTask task);
+
+    MonitorTask saveTask(MonitorTask monitorTask);
+
+    List<MonitorTaskListDTO> getTasksByUserId(Long userId);
 }

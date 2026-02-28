@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -32,7 +33,7 @@ public class MonitorTask {
     /**
      * 所属用户（多对一）
      */
-    @ManyToOne(optional = false)  // 假设任务必须属于某个用户，设为 false
+    @ManyToOne(optional = false) // 假设任务必须属于某个用户，设为 false
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
     /**
@@ -48,12 +49,6 @@ public class MonitorTask {
     private String keywords;
 
     /**
-     * Cron表达式，定义任务的执行时间，例如 "0 0 9 * * *" 表示每天9点
-     */
-    @Column(name = "cron_expression", nullable = false)
-    private String cronExpression;
-
-    /**
      * 是否启用该任务
      */
     @Column(nullable = false)
@@ -66,6 +61,20 @@ public class MonitorTask {
      */
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MonitorUrl> urls = new ArrayList<>();
+
+    // 一对一关联：一个任务对应一个定时任务配置
+    @OneToOne(mappedBy = "monitorTask", cascade = CascadeType.ALL, orphanRemoval = true)
+    private TaskScheduleConfig scheduleConfig;
+
+    public TaskScheduleConfig getScheduleConfig() {
+        return scheduleConfig;
+    }
+
+    public void setScheduleConfig(TaskScheduleConfig config) {
+        this.scheduleConfig = config;
+        if (config != null)
+            config.setMonitorTask(this);
+    }
 
     /**
      * 创建时间
@@ -80,13 +89,13 @@ public class MonitorTask {
     private LocalDateTime updatedAt;
 
     // 无参构造方法（JPA 要求）
-    public MonitorTask() {}
+    public MonitorTask() {
+    }
 
     // 带参构造方法（可选，便于快速创建）
-    public MonitorTask(String name, String keywords, String cronExpression) {
+    public MonitorTask(String name, String keywords) {
         this.name = name;
         this.keywords = keywords;
-        this.cronExpression = cronExpression;
     }
 
     // 生命周期回调：自动填充创建时间和更新时间
@@ -133,8 +142,13 @@ public class MonitorTask {
         return name;
     }
 
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 
     public void setName(String name) {
         this.name = name;
@@ -146,14 +160,6 @@ public class MonitorTask {
 
     public void setKeywords(String keywords) {
         this.keywords = keywords;
-    }
-
-    public String getCronExpression() {
-        return cronExpression;
-    }
-
-    public void setCronExpression(String cronExpression) {
-        this.cronExpression = cronExpression;
     }
 
     public boolean isEnabled() {
@@ -194,7 +200,6 @@ public class MonitorTask {
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", keywords='" + keywords + '\'' +
-                ", cronExpression='" + cronExpression + '\'' +
                 ", enabled=" + enabled +
                 ", urlsCount=" + (urls != null ? urls.size() : 0) +
                 ", createdAt=" + createdAt +

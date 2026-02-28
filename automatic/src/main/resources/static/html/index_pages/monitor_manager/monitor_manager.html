@@ -1,1 +1,89 @@
-<h1>开发中</h1>
+<div id="monitorManagerApp" class="page-card">
+	<div class="page-title">任务列表
+		<button class="logout-btn" style="float:right;margin-top:-4px;" @click="handleAddTask">添加任务</button>
+	</div>
+	<div v-if="isLoading" class="loading">加载中...</div>
+    <table v-else class="data-table">
+        <thead>
+            <tr>
+                <th>任务名称</th>
+                <th>关键字</th>
+                <th>开始时间</th>
+                <th>结束时间</th>
+                <th>执行间隔(分钟)</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 新增任务输入行 -->
+            <tr v-if="addingTask" style="background:#f8f9fa;">
+                <td style="min-width:120px;">
+                    <input v-model="newTask.name" placeholder="任务名称" class="task-input" style="width:100%;min-width:80px;max-width:180px;" />
+                </td>
+                <td style="min-width:120px;">
+                    <input v-model="newTask.keywords" placeholder="关键字" class="task-input" style="width:100%;min-width:80px;max-width:180px;" />
+                </td>
+                <td style="min-width:160px;">
+                    <input v-model="newTask.startTime" type="datetime-local" class="task-input" style="width:100%;min-width:120px;max-width:200px;" />
+                </td>
+                <td style="min-width:160px;">
+                    <input v-model="newTask.endTime" type="datetime-local" class="task-input" style="width:100%;min-width:120px;max-width:200px;" />
+                </td>
+                <td style="min-width:100px;">
+                    <input v-model.number="newTask.intervalMinutes" type="number" min="1" placeholder="间隔(分钟)" class="task-input" style="width:100%;min-width:60px;max-width:120px;" />
+                </td>
+                <td style="min-width:80px;">
+                    <select v-model="newTask.enabled" class="task-input" style="width:100%;min-width:60px;max-width:120px;">
+                        <option :value="true">激活</option>
+                        <option :value="false">关闭</option>
+                    </select>
+                </td>
+                <td style="min-width:140px;">
+                    <button class="logout-btn add-task-btn" @click="confirmAddTask" style="min-width:60px;">保存</button>
+                    <button class="logout-btn cancel-task-btn" @click="cancelAddTask" style="min-width:60px;">取消</button>
+                </td>
+            </tr>
+            <!-- 任务列表 -->
+            <template v-for="task in tasks" :key="task.id">
+                <tr @click="handleToggleLinks(task.id)" style="cursor:pointer;">
+                    <td>{{ task.name }}</td>
+                    <td>{{ task.keywords }}</td>
+                    <td>{{ task.startTime }}</td>
+                    <td>{{ task.endTime }}</td>
+                    <td>{{ task.intervalMinutes }}</td>
+                    <td>
+                        <span class="status" :class="task.enabled ? 'success' : 'error'">
+                            {{ task.enabled ? '激活' : '关闭' }}
+                        </span>
+                    </td>
+                    <td>
+                        <template v-if="!addingTask">
+                            <button class="logout-btn" @click.stop="handleActivate(task)">{{ task.active ? '关闭' : '激活' }}</button>
+                            <button class="logout-btn" @click.stop="handleAddLink(task)">添加扫描链接</button>
+                            <button class="logout-btn" @click.stop="handleEdit(task)">编辑</button>
+                            <button class="logout-btn" @click.stop="handleDelete(task.id)">删除</button>
+                        </template>
+                    </td>
+                </tr>
+                <!-- <tr v-if="showLinks[task.id]">
+                    <td colspan="4">
+                        <div style="padding:10px 0 0 20px;">
+                            <div v-if="task.links.length === 0" style="color:#999;">暂无扫描链接</div>
+                            <ul v-else style="list-style:none;padding:0;">
+                                <li v-for="(link, idx) in task.links" :key="link" style="margin-bottom:8px;">
+                                    <span style="color:#409eff;">{{ link }}</span>
+                                    <button class="logout-btn" @click.stop="handleEditLink(task, idx)">编辑</button>
+                                    <button class="logout-btn" @click.stop="handleDeleteLink(task, idx)">删除</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr> -->
+            </template>
+        </tbody>
+    </table>
+</div>
+<link rel="stylesheet" href="/html/index_pages/monitor_manager/monitor_manager.css" />
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="/html/index_pages/monitor_manager/monitor_manager.js"></script>

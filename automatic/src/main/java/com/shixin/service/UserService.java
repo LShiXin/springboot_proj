@@ -6,4 +6,6 @@ public interface UserService {
     User findByUsername(String username);
 
     User findById(Long id);
+
+    User JWTFindUserForRedisOrMysql(Long user_id);
 }

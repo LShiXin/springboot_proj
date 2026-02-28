@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.shixin.entity.MonitorTask;
+import com.shixin.entity.MonitorTaskListDTO;
 import com.shixin.repository.MonitorTaskRepository;
 import com.shixin.service.MonitorTaskService;
 
@@ -39,5 +40,15 @@ public class MonitorTaskServiceimpl implements MonitorTaskService {
     @Override 
     public MonitorTask saveOrUpdateTask(MonitorTask task) {
         return monitorTaskRepository.save(task);
+    }
+
+    @Override
+    public MonitorTask saveTask(MonitorTask monitorTask) {
+        return monitorTaskRepository.save(monitorTask);
+    }
+
+    @Override
+    public List<MonitorTaskListDTO> getTasksByUserId(Long userId) {
+        return monitorTaskRepository.findAllByUserId(userId);
     }
 }   
