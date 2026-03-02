@@ -61,6 +61,23 @@ public class MonitorTaskController {
     }
 
 
+    // 根据任务ID删除任务,和任务下面对应的链接
+    @PostMapping("/monitottask/handleDelete")
+    public ResponseEntity<ApiResponse<Boolean>> deleteMonitorTask(@RequestBody Long taskId,HttpServletRequest request) {
+        User user = (User) request.getAttribute("userInfo");
+        System.out.println("删除任务的用户信息：");
+        if (user == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "未授权"));
+        }
+        boolean deleted = monitorTaskService.deleteTaskById(taskId, user.getId());
+        if (deleted) {
+            return ResponseEntity.ok(ApiResponse.success(true));
+        } else {
+            return ResponseEntity.status(404).body(ApiResponse.error(404, "任务未找到或删除失败"));
+        }
+    }
+
+
 }
 
 

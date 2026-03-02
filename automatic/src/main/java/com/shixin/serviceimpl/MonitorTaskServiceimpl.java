@@ -51,4 +51,20 @@ public class MonitorTaskServiceimpl implements MonitorTaskService {
     public List<MonitorTaskListDTO> getTasksByUserId(Long userId) {
         return monitorTaskRepository.findAllByUserId(userId);
     }
+
+    @Override
+    public Boolean deleteTaskById(Long taskId, Long userId) {
+        try {
+            MonitorTask entity = monitorTaskRepository.findById(taskId).orElseThrow(() -> new RuntimeException("该用户下未发现定时任务"));
+            if (entity != null && entity.getUser().getId().equals(userId)) {
+                monitorTaskRepository.delete(entity);
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }   

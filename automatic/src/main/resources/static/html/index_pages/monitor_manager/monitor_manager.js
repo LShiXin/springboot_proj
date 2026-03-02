@@ -44,7 +44,6 @@ Vue.createApp({
                 });
                 if (!res.ok) throw new Error('获取用户任务失败');
                 const result = await res.json();
-                console.log('获取用户任全部任务:', result);
                 thit.tasks = result.data; // 直接覆盖任务列表
             } catch (err) {
                 alert('获取用户任务失败：' + err.message);
@@ -102,7 +101,7 @@ Vue.createApp({
                     },
                     body: JSON.stringify(payload)
                 });
-                console.log(res);
+               
                 if (!res.ok) throw new Error('添加任务失败');
                 const result = await res.json();    
                 // 添加到本地列表
@@ -116,8 +115,6 @@ Vue.createApp({
                     interval: result.data.intervalMillis,
                     active: result.data.enabled,
                 }
-                console.log('新任务对象:', new_task);
-                thit.tasks.unshift(new_task);
                 console.log('当前任务列表:', thit.tasks);
                 thit.tasks.unshift(new_task);
                 thit.addingTask = false;
@@ -138,9 +135,45 @@ Vue.createApp({
         handleEdit(task) {
             alert('编辑任务功能开发中');
         },
-        handleDelete(taskId) {
-            if (confirm('确定要删除该任务吗？')) {
-                this.tasks = this.tasks.filter(t => t.id !== taskId);
+        async handleDelete(taskId) {
+            console.log('准备删除任务，ID:', taskId);
+            var thit = this;
+            if (!confirm('确定要删除该任务吗？')) {
+                return;
+            }
+            
+            var token = localStorage.getItem('token');
+            console.log('删除任务，使用 token:', token);
+            if (!token) {
+                alert('登录状态失效，请先登录');
+                return;
+            }
+            
+            try {
+                const res = await fetch('http://localhost:8080/monitottask/handleDelete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(taskId)
+                });
+                
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || '删除任务失败');
+                }
+                
+                const result = await res.json();
+                if (result.code === 200 && result.data === true) {
+                    // 从前端列表中移除已删除的任务
+                    thit.tasks = thit.tasks.filter(t => t.id !== taskId);
+                    alert('任务删除成功');
+                } else {
+                    alert('删除失败：' + (result.message || '未知错误'));
+                }
+            } catch (err) {
+                alert('删除任务失败：' + err.message);
             }
         },
         handleAddLink(task) {
