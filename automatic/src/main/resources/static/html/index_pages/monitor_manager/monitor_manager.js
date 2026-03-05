@@ -2,7 +2,7 @@ Vue.createApp({
     data() {
         return {
             tasks: [], // 任务列表
-            isLoading: false,
+            // isLoading: false,
             addingTask: false,
             editingTaskId: null,
             activatingTaskId: null, // 正在激活的任务ID
@@ -51,7 +51,7 @@ Vue.createApp({
     methods: {
         handleAddTask() {
             this.addingTask = true;
-            this.newTask = { name: '', keywords: '', startTime: '', endTime: '', intervalMinutes: '', enabled: true, links: [] };
+            this.newTask = { name: '', keywords: '', startTime: '', endTime: '', intervalMinutes: '', enabled: true};
         },
          async loadUserTasks() {
             var thit = this;

@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.shixin.entity.MonitorTask;
 import com.shixin.entity.MonitorTaskListDTO;
+import com.shixin.entity.MonitorUrlListDTO;
 
 public interface MonitorTaskService {
      // 获取所有监控任务
@@ -20,8 +21,10 @@ public interface MonitorTaskService {
     MonitorTask saveTask(MonitorTask monitorTask);
 
     List<MonitorTaskListDTO> getTasksByUserId(Long userId);
+    List<MonitorUrlListDTO> findListDtoByUserId(Long userId);
 
     Boolean deleteTaskById(Long taskId, Long userId);
 
     MonitorTask updateTaskByUser(MonitorTask monitorTask, Long userId);
+    
 }

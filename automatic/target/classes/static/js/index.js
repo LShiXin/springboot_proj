@@ -5,7 +5,7 @@ createApp({
         return {
             username: localStorage.getItem('username') || (localStorage.getItem('token') ? '用户' : '游客'),
             activeMenu: '',
-            isLoading: false, // 加载状态
+            // isLoading: false, // 加载状态
             menuList: [
 
                 { title: '首页', icon: 'icon-home', path: './index_pages/home/home.html' },
@@ -38,7 +38,7 @@ createApp({
             // 1. 更新激活菜单
             this.activeMenu = menuTitle;
             // 2. 显示加载状态
-            this.isLoading = true;
+            // this.isLoading = true;
             const container = document.getElementById('pageContainer');
 
             try {
@@ -57,7 +57,7 @@ createApp({
                 container.innerHTML = `<div class="page-card"><div class="page-title">加载失败</div><p style="color:#f56c6c;">${err.message}</p></div>`;
             } finally {
                 // 6. 隐藏加载状态
-                this.isLoading = false;
+                // this.isLoading = false;
             }
         },
         // 执行子页面中的脚本（可选）

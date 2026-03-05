@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>系统首页</title>
     <!-- 引入Vue 3 CDN -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-    <!-- 引入图标库 -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/iconfont-iconpark@1.4.2/iconpark.css">
+    <script rel="preload" src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <!-- 引入CSS样式文件 -->
     <link rel="stylesheet" href="../css/index.css">
 </head>
@@ -48,7 +46,7 @@
             <!-- 右侧内容区（占3/4宽度）：改为动态加载容器 -->
             <section class="content-area">
                 <!-- 加载中提示 -->
-                <div v-if="isLoading" class="loading">加载中...</div>
+                <!-- <div v-if="isLoading" class="loading">加载中...</div> -->
                 <!-- 动态页面容器 -->
                 <div id="pageContainer" class="page-container"></div>
             </section>

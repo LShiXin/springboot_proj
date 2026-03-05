@@ -1,7 +1,9 @@
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\entity\MonitorTask.java
+C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\entity\MonitorUrlListDTO.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\entity\MonitorTaskListDTO.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\entity\ScheduleType.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\repository\MonitorTaskRepository.java
+C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\service\CacheService.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\serviceimpl\MonitorTaskServiceimpl.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\repository\UserRepository.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\controller\UserController.java
@@ -11,6 +13,7 @@ C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\repositor
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\controller\AccountController.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\entity\JwtUtil.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\controller\HomeController.java
+C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\serviceimpl\CacheServiceImpl.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\serviceimpl\RedisServceImpl.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\serviceimpl\ServerStatusServiceImpl.java
 C:\Users\22850\Desktop\java\project\automatic\src\main\java\com\shixin\service\UserService.java

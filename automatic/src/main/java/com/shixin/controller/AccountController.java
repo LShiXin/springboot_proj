@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.shixin.entity.ApiResponse;
 import com.shixin.entity.JwtUtil;
 import com.shixin.entity.User;
+import com.shixin.service.CacheService;
 import com.shixin.service.UserService;
 
 @RestController
@@ -22,6 +23,9 @@ public class AccountController {
 
     @Autowired
     private JwtUtil  jwtUtil;
+
+    @Autowired
+    private CacheService cacheService;
 
     // 登录接口
     @PostMapping("/login")
@@ -38,6 +42,11 @@ public class AccountController {
             // 生成并返回 token（实际应使用 JWT 等技术生成有效 token）
             response.put("token", jwtUtil.generateToken(user.getId()));
             System.out.println("生成的Token: " + response.get("token"));
+
+            // 登录成功后，异步缓存用户的监控任务和链接到 Redis
+            cacheService.cacheMonitorTasksToRedis(user.getId());
+            cacheService.cacheMonitorTaskUrlsToRedis(user.getId());
+            
             return ResponseEntity.ok(ApiResponse.success(response));
         } else{
             response.put("success", false);
