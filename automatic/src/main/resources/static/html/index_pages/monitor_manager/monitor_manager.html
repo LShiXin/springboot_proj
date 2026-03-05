@@ -17,7 +17,7 @@
         </thead>
         <tbody>
             <!-- 新增任务输入行 -->
-            <tr v-if="addingTask" style="background:#f8f9fa;">
+            <tr v-if="addingTask" style="background:#e9f3ec;">
                 <td style="min-width:120px;">
                     <input v-model="newTask.name" placeholder="任务名称" class="task-input" style="width:100%;min-width:80px;max-width:180px;" />
                 </td>
@@ -47,39 +47,113 @@
             <!-- 任务列表 -->
             <template v-for="task in tasks" :key="task.id">
                 <tr @click="handleToggleLinks(task.id)" style="cursor:pointer;">
-                    <td>{{ task.name }}</td>
-                    <td>{{ task.keywords }}</td>
-                    <td>{{ task.startTime }}</td>
-                    <td>{{ task.endTime }}</td>
-                    <td>{{ task.intervalMinutes }}</td>
+                    <td>
+                        <template v-if="editingTaskId === task.id">
+                            <input v-model="editingTask.name" class="task-input" style="width:100%;min-width:80px;max-width:180px;" />
+                        </template>
+                        <template v-else>{{ task.name }}</template>
+                    </td>
+                    <td>
+                        <template v-if="editingTaskId === task.id">
+                            <input v-model="editingTask.keywords" class="task-input" style="width:100%;min-width:80px;max-width:180px;" />
+                        </template>
+                        <template v-else>{{ task.keywords }}</template>
+                    </td>
+                    <td>
+                        <template v-if="editingTaskId === task.id">
+                            <input v-model="editingTask.startTime" type="datetime-local" class="task-input" style="width:100%;min-width:120px;max-width:200px;" />
+                        </template>
+                        <template v-else>{{ task.startTime }}</template>
+                    </td>
+                    <td>
+                        <template v-if="editingTaskId === task.id">
+                            <input v-model="editingTask.endTime" type="datetime-local" class="task-input" style="width:100%;min-width:120px;max-width:200px;" />
+                        </template>
+                        <template v-else>{{ task.endTime }}</template>
+                    </td>
+                    <td>
+                        <template v-if="editingTaskId === task.id">
+                            <input v-model.number="editingTask.intervalMinutes" type="number" min="1" class="task-input" style="width:100%;min-width:60px;max-width:120px;" />
+                        </template>
+                        <template v-else>{{ task.intervalMinutes }}</template>
+                    </td>
                     <td>
                         <span class="status" :class="task.enabled ? 'success' : 'error'">
                             {{ task.enabled ? '激活' : '关闭' }}
                         </span>
                     </td>
                     <td>
-                        <template v-if="!addingTask">
-                            <button class="logout-btn" @click.stop="handleActivate(task)">{{ task.active ? '关闭' : '激活' }}</button>
-                            <button class="logout-btn" @click.stop="handleAddLink(task)">添加扫描链接</button>
-                            <button class="logout-btn" @click.stop="handleEdit(task)">编辑</button>
-                            <button class="logout-btn" @click.stop="handleDelete(task.id)">删除</button>
+                        <template v-if="editingTaskId === task.id">
+                            <div class="edit-actions">
+                                <button class="logout-btn save-btn" :disabled="!isEditingTaskModified" @click.stop="saveEditTask(task)">保存</button>
+                                <button class="logout-btn cancel-btn" @click.stop="cancelEditTask">取消</button>
+                            </div>
+                        </template>
+                        <template v-else-if="!addingTask">
+                            <div class="task-actions">
+                                <button class="logout-btn" :disabled="activatingTaskId === task.id" @click.stop="handleActivate(task)">{{ task.enabled ? '关闭' : '激活' }}</button>
+                                <div class="more-dropdown">
+                                    <button class="logout-btn more-btn">更多</button>
+                                    <div class="dropdown-menu">
+                                        <button class="logout-btn dropdown-item" @click.stop="handleAddLink(task)">添加扫描链接</button>
+                                        <button class="logout-btn dropdown-item" @click.stop="handleEdit(task)">编辑</button>
+                                        <button class="logout-btn dropdown-item" @click.stop="handleDelete(task.id)">删除</button>
+                                    </div>
+                                </div>
+                            </div>
                         </template>
                     </td>
                 </tr>
-                <!-- <tr v-if="showLinks[task.id]">
-                    <td colspan="4">
-                        <div style="padding:10px 0 0 20px;">
-                            <div v-if="task.links.length === 0" style="color:#999;">暂无扫描链接</div>
-                            <ul v-else style="list-style:none;padding:0;">
-                                <li v-for="(link, idx) in task.links" :key="link" style="margin-bottom:8px;">
-                                    <span style="color:#409eff;">{{ link }}</span>
-                                    <button class="logout-btn" @click.stop="handleEditLink(task, idx)">编辑</button>
-                                    <button class="logout-btn" @click.stop="handleDeleteLink(task, idx)">删除</button>
-                                </li>
-                            </ul>
+                <!-- 链接子表 -->
+                <tr v-if="showLinks[task.id]">
+                    <td colspan="7" style="padding: 0; border-top: none;">
+                        <div class="sub-table-container">
+                            <table class="sub-table">
+                                <thead>
+                                    <tr>
+                                        <th>监控链接</th>
+                                        <th>是否启用</th>
+                                        <th>备注</th>
+                                        <th>
+                                            操作
+                                            <button class="logout-btn" @click.stop="closeSubTable(task.id)" style="float: right; min-width: 40px; padding: 4px 8px; font-size: 12px;">关闭</button>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(link, idx) in task.links" :key="link.id">
+                                        <td>{{ link.url }}</td>
+                                        <td>
+                                            <span class="status" :class="link.enabled ? 'success' : 'error'">
+                                                {{ link.enabled ? '启用' : '禁用' }}
+                                            </span>
+                                        </td>
+                                        <td>{{ link.remark }}</td>
+                                        <td>
+                                            <button class="logout-btn" @click.stop="toggleLinkStatus(link)">{{ link.enabled ? '关闭' : '启用' }}</button>
+                                            <button class="logout-btn" @click.stop="handleEditLink(task, idx)">编辑</button>
+                                            <button class="logout-btn" @click.stop="handleDeleteLink(task, idx)">删除</button>
+                                        </td>
+                                    </tr>
+                                    <!-- 添加新链接的行 -->
+                                    <tr>
+                                        <td><input v-model="newLink.url" placeholder="请输入监控链接" class="task-input" /></td>
+                                        <td>
+                                            <select v-model="newLink.enabled" class="task-input">
+                                                <option :value="true">启用</option>
+                                                <option :value="false">禁用</option>
+                                            </select>
+                                        </td>
+                                        <td><input v-model="newLink.remark" placeholder="请输入备注" class="task-input" /></td>
+                                        <td>
+                                            <button class="logout-btn" @click.stop="addNewLink(task)">添加</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </td>
-                </tr> -->
+                </tr>
             </template>
         </tbody>
     </table>

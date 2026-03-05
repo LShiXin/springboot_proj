@@ -35,3 +35,247 @@
     background-color: #f5f5f5;
     color: #666;
 }
+
+/* 任务列表布局稳定，避免点击编辑时列宽抖动 */
+.data-table {
+    width: 100%;
+    table-layout: auto;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    vertical-align: middle;
+    overflow: visible;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 12px 8px;
+}
+
+/* 操作列固定宽度 */
+.data-table th:last-child,
+.data-table td:last-child {
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
+    text-align: center;
+}
+
+/* 其他列宽度设置 */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) {
+    width: 15%;
+    min-width: 120px;
+    max-width: 200px;
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) {
+    width: 12%;
+    min-width: 100px;
+    max-width: 180px;
+}
+
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) {
+    width: 15%;
+    min-width: 140px;
+    max-width: 200px;
+}
+
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) {
+    width: 15%;
+    min-width: 140px;
+    max-width: 200px;
+}
+
+.data-table th:nth-child(5),
+.data-table td:nth-child(5) {
+    width: 10%;
+    min-width: 80px;
+    max-width: 120px;
+}
+
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+    width: 10%;
+    min-width: 80px;
+    max-width: 120px;
+    text-align: center;
+}
+
+/* 按钮样式统一 */
+.data-table .logout-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    height: 32px;
+    margin: 2px 4px 2px 0;
+    padding: 0 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #fff;
+    color: #606266;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.data-table .logout-btn:hover {
+    border-color: #409eff;
+    color: #409eff;
+}
+
+/* 编辑态下输入框使用单元格全宽但不撑破布局 */
+.data-table td .task-input {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 32px;
+    font-size: small;
+    box-sizing: border-box;
+}
+
+/* 确保编辑状态和非编辑状态的占位空间一致 */
+.data-table td:last-child .logout-btn,
+.data-table td:last-child .task-input {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* 编辑状态下隐藏操作按钮，只显示保存和取消按钮 */
+/* 使用类名来区分编辑状态和非编辑状态的按钮 */
+/* 编辑状态下，只显示保存和取消按钮 */
+.data-table td:last-child .edit-actions .save-btn,
+.data-table td:last-child .edit-actions .cancel-btn {
+    display: inline-block !important;
+}
+/* 编辑状态下，隐藏其他按钮 */
+.data-table td:last-child .edit-actions .logout-btn:not(.save-btn):not(.cancel-btn) {
+    display: none !important;
+}
+
+/* 任务状态下，显示所有按钮 */
+.data-table td:last-child .task-actions .logout-btn {
+    display: inline-block !important;
+}
+
+/* 更多下拉菜单样式 */
+.data-table td:last-child .more-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.data-table td:last-child .more-btn {
+    position: relative;
+    padding-right: 20px !important;
+}
+
+.data-table td:last-child .dropdown-menu {
+    position: absolute;
+    top: calc(100% - 1px);
+    left: 0;
+    min-width: 120px;
+    max-width: 200px;
+    margin-top: 0;
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    display: none;
+    white-space: normal;
+    overflow: visible;
+}
+
+.data-table td:last-child .dropdown-menu.show {
+    display: block;
+}
+
+.data-table td:last-child .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 8px 12px !important;
+    text-align: left;
+    background-color: transparent !important;
+    border: none !important;
+    color: #606266 !important;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.data-table td:last-child .dropdown-item:hover {
+    background-color: #f5f7fa !important;
+    color: #409eff !important;
+}
+
+/* 悬浮显示下拉菜单 */
+.data-table td:last-child .more-dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+/* 任务操作按钮容器居中 */
+.data-table td:last-child .task-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* 编辑操作按钮容器居中 */
+.data-table td:last-child .edit-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* 子表样式 */
+.sub-table-container {
+    padding: 10px;
+    background-color: #fafafa;
+    border-top: 2px solid #e0e0e0;
+    margin: 0 -8px -12px -8px;
+}
+
+.sub-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+    border: 1px solid #ebeef5;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.sub-table th,
+.sub-table td {
+    padding: 10px 8px;
+    text-align: left;
+    border-bottom: 1px solid #ebeef5;
+}
+
+.sub-table th {
+    background-color: #f5f7fa;
+    font-weight: 600;
+    color: #606266;
+    font-size: 13px;
+}
+
+.sub-table tbody tr:hover {
+    background-color: #f5f7fa;
+}
+
+.sub-table td {
+    vertical-align: middle;
+}
+
+.sub-table .logout-btn {
+    min-width: 50px;
+    height: 28px;
+    padding: 0 6px;
+    font-size: 11px;
+    margin: 0 2px;
+}

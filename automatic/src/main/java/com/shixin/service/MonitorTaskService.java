@@ -22,4 +22,6 @@ public interface MonitorTaskService {
     List<MonitorTaskListDTO> getTasksByUserId(Long userId);
 
     Boolean deleteTaskById(Long taskId, Long userId);
+
+    MonitorTask updateTaskByUser(MonitorTask monitorTask, Long userId);
 }

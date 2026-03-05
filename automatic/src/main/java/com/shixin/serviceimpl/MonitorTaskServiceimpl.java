@@ -67,4 +67,27 @@ public class MonitorTaskServiceimpl implements MonitorTaskService {
             return false;
         }
     }
+
+    @Override
+    public MonitorTask updateTaskByUser(MonitorTask monitorTask, Long userId) {
+        if (monitorTask == null || monitorTask.getId() == null) {
+            throw new RuntimeException("任务参数不正确");
+        }
+        MonitorTask entity = monitorTaskRepository.findById(monitorTask.getId())
+                .orElseThrow(() -> new RuntimeException("任务不存在"));
+        if (entity.getUser() == null || !entity.getUser().getId().equals(userId)) {
+            throw new RuntimeException("无权限编辑该任务");
+        }
+
+        entity.setName(monitorTask.getName());
+        entity.setKeywords(monitorTask.getKeywords());
+
+        if (entity.getScheduleConfig() != null && monitorTask.getScheduleConfig() != null) {
+            entity.getScheduleConfig().setStartTime(monitorTask.getScheduleConfig().getStartTime());
+            entity.getScheduleConfig().setEndTime(monitorTask.getScheduleConfig().getEndTime());
+            entity.getScheduleConfig().setIntervalMillis(monitorTask.getScheduleConfig().getIntervalMillis());
+        }
+        // 按需求：状态字段不在本次编辑范围内，不更新 enabled
+        return monitorTaskRepository.save(entity);
+    }
 }   

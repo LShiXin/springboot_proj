@@ -77,7 +77,58 @@ public class MonitorTaskController {
         }
     }
 
+    /*
+    更新任务，传入的 MonitorTask 对象必须包含 ID、name、keywords 和 scheduleConfig 字段，
+    且 ID 必须对应一个已存在的任务。更新操作会检查用户权限，确保用户只能更新自己的任务。
+    更新成功后返回更新后的任务信息，如果请求数据错误或更新失败则返回相应的错误信息。
+    */
+    @PostMapping("/monitottask/update")
+    public ResponseEntity<ApiResponse<MonitorTaskListDTO>> updateMonitorTask(@RequestBody MonitorTask monitorTask,
+            HttpServletRequest request) {
+        User user = (User) request.getAttribute("userInfo");
+        if (user == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "未授权"));
+        }
+        if (monitorTask == null || monitorTask.getId() == null || monitorTask.getName() == null
+                || monitorTask.getKeywords() == null || monitorTask.getScheduleConfig() == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, "请求数据错误"));
+        }
+        try {
+            MonitorTask updatedTask = monitorTaskService.updateTaskByUser(monitorTask, user.getId());
+            MonitorTaskListDTO dto = new MonitorTaskListDTO(updatedTask.getId(), updatedTask.getName(),
+                    updatedTask.getKeywords(), updatedTask.isEnabled(), updatedTask.getScheduleConfig().getStartTime(),
+                    updatedTask.getScheduleConfig().getTimePoint(),
+                    updatedTask.getScheduleConfig().getIntervalMillis() / 60000,
+                    updatedTask.getScheduleConfig().getEndTime());
+            return ResponseEntity.ok(ApiResponse.success(dto));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        }
+    }
+
+
+    @PostMapping("/monitottask/handleActivate")
+    public ResponseEntity<ApiResponse<String>> handleActivate(@RequestBody Long task_id,HttpServletRequest request) {
+        //TODO: process POST request
+        System.out.println("接收到的任务ID：" + task_id);
+        User user = (User) request.getAttribute("userInfo");
+        if (user == null) {
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "未授权"));
+        }
+        //获取编辑的任务
+        MonitorTask entity = monitorTaskService.getTaskById(task_id);
+        if (entity == null || !entity.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(404).body(ApiResponse.error(404, "任务未找到或无权限"));
+        }else {
+            //切换任务状态
+            entity.setEnabled(!entity.isEnabled());
+            monitorTaskService.updateTaskByUser(entity, user.getId());
+            return ResponseEntity.ok(ApiResponse.success("任务状态已切换"));
+        }
+    }
+    
 
 }
+
 
 
