@@ -1,27 +1,42 @@
 package com.shixin.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.shixin.entity.ApiResponse;
+import com.shixin.entity.ConfigItem;
 import com.shixin.entity.MonitorTask;
 import com.shixin.entity.MonitorTaskListDTO;
+import com.shixin.entity.MonitorUrl;
+import com.shixin.entity.MonitorUrlListDTO;
 import com.shixin.entity.ScheduleType;
 import com.shixin.entity.User;
 import com.shixin.service.MonitorTaskService;
+import com.shixin.service.BaseUrlsManagerService;
+import com.shixin.service.CacheService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
+@RequestMapping("/api")
 public class MonitorTaskController {
 
     @Autowired
     private MonitorTaskService monitorTaskService;
+
+    @Autowired
+    private BaseUrlsManagerService baseUrlsManagerService;
+
+    @Autowired
+    private CacheService cacheService;
     
     // 获取当前用户的所有监控任务
     @PostMapping("/monitottask/getbyuser")
@@ -50,7 +65,7 @@ public class MonitorTaskController {
             System.out.println("保存的任务" + monitorTask);
             monitorTask.getScheduleConfig().setScheduleType(ScheduleType.FIXED_RATE); // 这里假设默认使用 CRON 类型，实际可以根据前端传来的数据进行设置
             System.out.println("保存的任务配置" + monitorTask.getScheduleConfig());
-            MonitorTask savedTask =monitorTaskService.saveTask(monitorTask);
+            MonitorTask savedTask =monitorTaskService.saveOrUpdateTask(monitorTask);
             MonitorTaskListDTO dto = new MonitorTaskListDTO(savedTask.getId(), savedTask.getName(), savedTask.getKeywords(),
                     savedTask.isEnabled(), savedTask.getScheduleConfig().getStartTime(),
                     savedTask.getScheduleConfig().getTimePoint(),
@@ -106,7 +121,9 @@ public class MonitorTaskController {
         }
     }
 
-
+    /*
+    修改定时任务状态
+    */
     @PostMapping("/monitottask/handleActivate")
     public ResponseEntity<ApiResponse<String>> handleActivate(@RequestBody Long task_id,HttpServletRequest request) {
         //TODO: process POST request
@@ -126,8 +143,227 @@ public class MonitorTaskController {
             return ResponseEntity.ok(ApiResponse.success("任务状态已切换"));
         }
     }
+
+   
+    /*
+    加载所有可选的链接
+    */
+    @GetMapping("/monitottask/loadOptionalUrls")
+    public ResponseEntity<ApiResponse<List<ConfigItem>>> loadOptionalUrls() {
+        //TODO: process POST request
+        try{
+            List<ConfigItem> load_list=baseUrlsManagerService.loadPotional_Urls();
+            return ResponseEntity.status(200).body(ApiResponse.success(load_list));
+        }catch (Exception e) {
+            // TODO: handle exception
+           return ResponseEntity.status(404).body(ApiResponse.error(500, "配置文件加载错误"));
+        }
+    }
     
 
+
+    // 获取某监控任务下的所有监控链接
+    @PostMapping("/monitottask/getTaskUrlsByTaskId")
+    public ResponseEntity<ApiResponse<List<MonitorUrlListDTO>>> getTaskUrlsByTaskId(@RequestBody Long TaskID) {
+        List<MonitorUrl> list=monitorTaskService.findAllTaskUrlsByTaskId(TaskID);
+        List<MonitorUrlListDTO> result=new ArrayList<>();
+        for(MonitorUrl item : list){
+            result.add(new MonitorUrlListDTO(item.getId(),item.getTask().getId(),item.getUrl(),item.isEnabled(),item.getRemark()));
+        }
+        return ResponseEntity.status(200).body(ApiResponse.success(result));
+    }
+    
+    // 添加监控链接到任务
+    @PostMapping("/monitottask/addLink")
+    public ResponseEntity<ApiResponse<MonitorUrlListDTO>> addLinkToTask(@RequestBody AddLinkRequest request, HttpServletRequest httpRequest) {
+        System.out.println("收到添加链接请求: " + (request != null ? request.toString() : "null"));
+        User user = (User) httpRequest.getAttribute("userInfo");
+        if (user == null) {
+            System.out.println("用户未授权");
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "未授权"));
+        }
+        
+        System.out.println("当前用户ID: " + user.getId());
+        
+        if (request == null || request.getTaskId() == null || request.getUrl() == null) {
+            System.out.println("请求数据错误: taskId=" + (request != null ? request.getTaskId() : "null") + 
+                             ", url=" + (request != null ? request.getUrl() : "null"));
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, "请求数据错误"));
+        }
+        
+        try {
+            // 验证任务是否存在且属于当前用户
+            System.out.println("查找任务ID: " + request.getTaskId());
+            MonitorTask task = monitorTaskService.getTaskById(request.getTaskId());
+            if (task == null) {
+                System.out.println("任务不存在: " + request.getTaskId());
+                return ResponseEntity.status(404).body(ApiResponse.error(404, "任务不存在"));
+            }
+            
+            System.out.println("找到任务: " + task.getId() + ", 任务所属用户ID: " + 
+                             (task.getUser() != null ? task.getUser().getId() : "null"));
+            
+            if (task.getUser() == null || !task.getUser().getId().equals(user.getId())) {
+                System.out.println("无权限操作此任务: 任务用户ID=" + 
+                                 (task.getUser() != null ? task.getUser().getId() : "null") + 
+                                 ", 当前用户ID=" + user.getId());
+                return ResponseEntity.status(403).body(ApiResponse.error(403, "无权限操作此任务"));
+            }
+            
+            // 创建新的监控链接
+            MonitorUrl monitorUrl = new MonitorUrl();
+            monitorUrl.setUrl(request.getUrl());
+            monitorUrl.setTask(task);
+            monitorUrl.setEnabled(request.isEnabled());
+            monitorUrl.setRemark(request.getRemark());
+            
+            System.out.println("创建监控链接: " + monitorUrl);
+            
+            // 保存监控链接
+            MonitorUrl savedUrl = monitorTaskService.save_MonitorUrl(monitorUrl);
+            System.out.println("保存成功: " + savedUrl);
+            
+            // 重新缓存用户的完整信息到Redis
+            cacheService.cacheUserAllInfoToRedis(user.getId());
+            
+            // 返回DTO
+            MonitorUrlListDTO dto = new MonitorUrlListDTO(
+                savedUrl.getId(),
+                savedUrl.getTask().getId(),
+                savedUrl.getUrl(),
+                savedUrl.isEnabled(),
+                savedUrl.getRemark()
+            );
+            
+            System.out.println("返回DTO: " + dto);
+            return ResponseEntity.ok(ApiResponse.success(dto));
+        } catch (Exception e) {
+            System.out.println("添加链接异常: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        }
+    }
+    
+    // 删除监控链接
+    @PostMapping("/monitottask/deleteLink")
+    public ResponseEntity<ApiResponse<Boolean>> deleteLink(@RequestBody Long linkId, HttpServletRequest httpRequest) {
+        System.out.println("收到删除链接请求，链接ID: " + linkId);
+        User user = (User) httpRequest.getAttribute("userInfo");
+        if (user == null) {
+            System.out.println("用户未授权");
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "未授权"));
+        }
+        
+        if (linkId == null) {
+            System.out.println("链接ID不能为空");
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, "链接ID不能为空"));
+        }
+        
+        try {
+            boolean deleted = monitorTaskService.deleteLinkById(linkId, user.getId());
+            if (deleted) {
+                System.out.println("链接删除成功: " + linkId);
+                return ResponseEntity.ok(ApiResponse.success(true));
+            } else {
+                System.out.println("链接删除失败或无权删除: " + linkId);
+                return ResponseEntity.status(403).body(ApiResponse.error(403, "链接删除失败或无权限"));
+            }
+        } catch (Exception e) {
+            System.out.println("删除链接异常: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        }
+    }
+    
+    // 切换链接状态（关闭/启用）
+    @PostMapping("/monitottask/toggleLinkStatus")
+    public ResponseEntity<ApiResponse<MonitorUrlListDTO>> toggleLinkStatus(@RequestBody Long linkId, HttpServletRequest httpRequest) {
+        System.out.println("收到切换链接状态请求，链接ID: " + linkId);
+        User user = (User) httpRequest.getAttribute("userInfo");
+        if (user == null) {
+            System.out.println("用户未授权");
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "未授权"));
+        }
+        
+        if (linkId == null) {
+            System.out.println("链接ID不能为空");
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, "链接ID不能为空"));
+        }
+        
+        try {
+            MonitorUrl updatedLink = monitorTaskService.toggleLinkStatus(linkId, user.getId());
+            if (updatedLink != null) {
+                System.out.println("链接状态切换成功: " + linkId + ", 新状态: " + updatedLink.isEnabled());
+                
+                // 返回DTO
+                MonitorUrlListDTO dto = new MonitorUrlListDTO(
+                    updatedLink.getId(),
+                    updatedLink.getTask().getId(),
+                    updatedLink.getUrl(),
+                    updatedLink.isEnabled(),
+                    updatedLink.getRemark()
+                );
+                
+                return ResponseEntity.ok(ApiResponse.success(dto));
+            } else {
+                System.out.println("链接状态切换失败或无权操作: " + linkId);
+                return ResponseEntity.status(403).body(ApiResponse.error(403, "链接状态切换失败或无权限"));
+            }
+        } catch (Exception e) {
+            System.out.println("切换链接状态异常: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
+        }
+    }
+    
+    // 内部类：添加链接请求
+    public static class AddLinkRequest {
+        private Long taskId;
+        private String url;
+        private String remark;
+        private boolean enabled = true;
+        private String classId;  // 改为 String，因为 ConfigItem 中的 class_id 是 String
+        private String methodId; // 改为 String，因为 ConfigItem 中的 method_id 是 String
+        private Integer urlId;   // 改为 Integer，因为 ConfigItem 中的 url_id 是 int
+        
+        // 无参构造函数（Jackson 需要）
+        public AddLinkRequest() {}
+        
+        // Getters and Setters
+        public Long getTaskId() { return taskId; }
+        public void setTaskId(Long taskId) { this.taskId = taskId; }
+        
+        public String getUrl() { return url; }
+        public void setUrl(String url) { this.url = url; }
+        
+        public String getRemark() { return remark; }
+        public void setRemark(String remark) { this.remark = remark; }
+        
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        
+        public String getClassId() { return classId; }
+        public void setClassId(String classId) { this.classId = classId; }
+        
+        public String getMethodId() { return methodId; }
+        public void setMethodId(String methodId) { this.methodId = methodId; }
+        
+        public Integer getUrlId() { return urlId; }
+        public void setUrlId(Integer urlId) { this.urlId = urlId; }
+        
+        @Override
+        public String toString() {
+            return "AddLinkRequest{" +
+                    "taskId=" + taskId +
+                    ", url='" + url + '\'' +
+                    ", remark='" + remark + '\'' +
+                    ", enabled=" + enabled +
+                    ", classId='" + classId + '\'' +
+                    ", methodId='" + methodId + '\'' +
+                    ", urlId=" + urlId +
+                    '}';
+        }
+    }
 }
 
 

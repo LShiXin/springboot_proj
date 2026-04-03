@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 构建请求数据
         const registerData = JSON.stringify({ username, password });
-        const apiPath = "http://localhost:8080/register";
+        const apiPath = "http://localhost:8080/api/register";
 
         // 发送注册请求
         fetch(apiPath, {

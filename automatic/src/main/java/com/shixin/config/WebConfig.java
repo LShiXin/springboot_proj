@@ -17,8 +17,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
-                .addPathPatterns("/**")          // 拦截所有 /api 开头的请求
-                .excludePathPatterns("/login","/favicon.ico", "/register","/html/**","/css/**","/js/**","/home","/static/**"); // 排除登录注册接口
+                .addPathPatterns("/api/**")          // 拦截所有 /api 开头的请求
+                .excludePathPatterns("/api/login", "/api/register", "/favicon.ico", "/html/**","/css/**","/js/**","/home","/static/**"); // 排除登录注册接口和静态资源
     }
 
     // 配置 CORS 规则

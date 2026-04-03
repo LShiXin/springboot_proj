@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +17,7 @@ import com.shixin.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/api/user")
 public class UserController {
 
     @Autowired
@@ -28,7 +29,11 @@ public class UserController {
 
         // JWT过滤器已经将用户信息存入请求属性中，这里直接获取即可
         User user=(User) request.getAttribute("userInfo");
-        System.out.println("查询用户数据，用户ID：" + user.toString());
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(401, "用户未登录或Token无效"));
+        }
+        System.out.println("查询用户数据，用户ID：" + user.getId());
         Map<String, String> userInfo = new HashMap<>();
         userInfo.put("username", user.getUsername());
         userInfo.put("email", user.getEmail());

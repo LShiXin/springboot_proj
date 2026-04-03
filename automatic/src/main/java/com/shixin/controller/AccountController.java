@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.shixin.entity.ApiResponse;
@@ -17,6 +18,7 @@ import com.shixin.service.CacheService;
 import com.shixin.service.UserService;
 
 @RestController
+@RequestMapping("/api")
 public class AccountController {
     @Autowired
     private UserService userService;
@@ -43,9 +45,8 @@ public class AccountController {
             response.put("token", jwtUtil.generateToken(user.getId()));
             System.out.println("生成的Token: " + response.get("token"));
 
-            // 登录成功后，异步缓存用户的监控任务和链接到 Redis
-            cacheService.cacheMonitorTasksToRedis(user.getId());
-            cacheService.cacheMonitorTaskUrlsToRedis(user.getId());
+            // 登录成功后，异步缓存用户的完整信息到 Redis（包含用户基本信息和所有定时任务）
+            cacheService.cacheUserAllInfoToRedis(user.getId());
             
             return ResponseEntity.ok(ApiResponse.success(response));
         } else{

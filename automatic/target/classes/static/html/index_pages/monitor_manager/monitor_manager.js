@@ -24,16 +24,23 @@ Vue.createApp({
                 enabled: false,
                 links: []
             },
+            linksByTaskId: {},             // 以任务ID为键的链接对象
             showLinks: {}, // 控制显示链接子表的状态
-            newLink: {
-                url: '',
-                enabled: true,
-                remark: ''
-            }
+
+
+            allOptionalUrls: [],
+            showAddLinkModal: false,  // 控制添加链接弹窗显示
+            selectedUrlId: '',        // 选中的链接ID
+            currentAddLinkTask: null  // 当前要添加链接的任务
         };
     },
     mounted() {
+        // 加载该用户下的定时任务
         this.loadUserTasks();
+
+        // 加载所有可选的用户链接
+        this.loadOptionalUrls(); 
+        
     },
     computed: {
         // 计算属性：判断编辑的任务是否有修改
@@ -46,14 +53,70 @@ Vue.createApp({
                 this.editingTask.endTime !== this.originalEditingTask.endTime ||
                 this.editingTask.intervalMinutes !== this.originalEditingTask.intervalMinutes
             );
+        },
+        // 计算属性：获取选中的链接详情
+        selectedLinkDetail() {
+            if (!this.selectedUrlId) return null;
+            return this.allOptionalUrls.find(item => item.url_id == this.selectedUrlId);
+        },
+        // 计算属性：获取按钮提示信息
+        buttonTooltip() {
+            if (this.allOptionalUrls.length === 0) {
+                return '没有可用的链接，请先添加基础链接';
+            } else if (!this.selectedUrlId) {
+                return '请从下拉列表中选择一个链接';
+            } else {
+                return '点击确认添加选中的链接';
+            }
         }
     },
     methods: {
         handleAddTask() {
             this.addingTask = true;
-            this.newTask = { name: '', keywords: '', startTime: '', endTime: '', intervalMinutes: '', enabled: true};
+            this.newTask = { name: '', keywords: '', startTime: '', endTime: '', intervalMinutes: '', enabled: true };
         },
-         async loadUserTasks() {
+        async loadOptionalUrls(){
+            var thit=this
+            var token = localStorage.getItem('token');
+            if (!token) {
+                console.warn('未找到token，无法加载可选链接');
+                thit.allOptionalUrls = [];
+                return;
+            }
+            var path="http://localhost:8080/api/monitottask/loadOptionalUrls"
+            try {
+                const res = await fetch(path, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        console.warn('Token无效或已过期，请重新登录');
+                        thit.allOptionalUrls = [];
+                        return;
+                    }
+                    throw new Error(`HTTP错误: ${res.status}`);
+                }
+                
+                const result = await res.json();
+                if (result.code === 200 && result.data) {
+                    thit.allOptionalUrls = result.data;
+                    console.log('成功加载可选链接:', thit.allOptionalUrls.length, '个');
+                } else {
+                    console.warn('加载可选链接失败:', result.message || '未知错误');
+                    thit.allOptionalUrls = [];
+                }
+            } catch (err) {
+                console.error('获取可选链接失败：' + err.message);
+                thit.allOptionalUrls = [];
+            }
+
+        },
+        async loadUserTasks() {
             var thit = this;
             // 判断 tasks 是否已存在有效任务（如有 id 字段的对象）
             if (this.tasks.length > 0 && this.tasks.some(t => t && t.id)) {
@@ -65,7 +128,7 @@ Vue.createApp({
                 return;
             }
             try {
-                const res = await fetch('http://localhost:8080/monitottask/getbyuser', {
+                const res = await fetch('http://localhost:8080/api/monitottask/getbyuser', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -102,7 +165,7 @@ Vue.createApp({
             }
             await this.confirmAddTaskApi(this.newTask);
         },
-       
+
         async confirmAddTaskApi(taskData) {
             // 构造后端需要的任务对象
             var thit = this
@@ -123,7 +186,7 @@ Vue.createApp({
                 }
             };
             try {
-                const res = await fetch('http://localhost:8080/monitottask/add', {
+                const res = await fetch('http://localhost:8080/api/monitottask/add', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -131,9 +194,9 @@ Vue.createApp({
                     },
                     body: JSON.stringify(payload)
                 });
-               
+
                 if (!res.ok) throw new Error('添加任务失败');
-                const result = await res.json();    
+                const result = await res.json();
                 // 添加到本地列表
                 console.log('添加任务响应:', result);
                 var new_task = {
@@ -156,19 +219,57 @@ Vue.createApp({
         cancelAddTask() {
             this.addingTask = false;
         },
+
+        //点击显示当前任务的子表
         handleToggleLinks(taskId) {
             // 切换指定任务的链接子表显示状态
             this.showLinks = { ...this.showLinks, [taskId]: !this.showLinks[taskId] };
-            
-            // 为测试目的，给任务添加一些固定的链接数据
-            const task = this.tasks.find(t => t.id === taskId);
-            if (task && !task.links) {
-                // 添加固定数据用于测试
-                task.links = [
-                    { id: 1, url: 'https://www.example.com', enabled: true, remark: '示例网站' },
-                    { id: 2, url: 'https://www.test.com', enabled: false, remark: '测试网站' },
-                    { id: 3, url: 'https://www.demo.com', enabled: true, remark: '演示网站' }
-                ];
+
+            // 如果链接子表被展开且任务没有链接数据，则从后端获取
+            if (this.showLinks[taskId]) {
+                this.getTaskUrls(taskId);
+            }
+        },
+        // 获取对应taskID下的全部数据
+        async getTaskUrls(taskID) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('登录状态失效，请先登录');
+                return;
+            }
+
+            try {
+                const res = await fetch('http://localhost:8080/api/monitottask/getTaskUrlsByTaskId', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(taskID)
+                });
+
+                if (!res.ok) {
+                    throw new Error('获取任务链接失败');
+                }
+
+                const result = await res.json();
+                if (result.code === 200) {
+                    // 找到对应的任务并更新链接数据
+                    const task = this.tasks.find(t => t.id === taskID);
+                    if (task) {
+                        task.links = result.data.map(item => ({
+                            id: item.id,
+                            taskId: item.taskId,
+                            url: item.url,
+                            enabled: item.enabled,
+                            remark: item.remark
+                        }));
+                    }
+                } else {
+                    alert('获取任务链接失败：' + (result.message || '未知错误'));
+                }
+            } catch (err) {
+                alert('获取任务链接失败：' + err.message);
             }
         },
         handleActivate(task) {
@@ -177,11 +278,11 @@ Vue.createApp({
                 alert('登录状态失效，请先登录');
                 return;
             }
-            
+
             // 设置正在激活状态
             this.activatingTaskId = task.id;
-            
-            fetch('http://localhost:8080/monitottask/handleActivate', {
+
+            fetch('http://localhost:8080/api/monitottask/handleActivate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -189,29 +290,29 @@ Vue.createApp({
                 },
                 body: task.id
             })
-            .then(async (res) => {
-                if (!res.ok) {
-                    const errorData = await res.json().catch(() => ({}));
-                    throw new Error(errorData.message || '激活任务失败');
-                }
-                return res.json();
-            })
-            .then((result) => {
-                if (result.code === 200) {
-                    // 切换任务状态
-                    task.enabled = !task.enabled;
-                    alert('任务状态已切换');
-                } else {
-                    alert('激活失败：' + (result.message || '未知错误'));
-                }
-            })
-            .catch((err) => {
-                alert('激活任务失败：' + err.message);
-            })
-            .finally(() => {
-                // 清除正在激活状态
-                this.activatingTaskId = null;
-            });
+                .then(async (res) => {
+                    if (!res.ok) {
+                        const errorData = await res.json().catch(() => ({}));
+                        throw new Error(errorData.message || '激活任务失败');
+                    }
+                    return res.json();
+                })
+                .then((result) => {
+                    if (result.code === 200) {
+                        // 切换任务状态
+                        task.enabled = !task.enabled;
+                        alert('任务状态已切换');
+                    } else {
+                        alert('激活失败：' + (result.message || '未知错误'));
+                    }
+                })
+                .catch((err) => {
+                    alert('激活任务失败：' + err.message);
+                })
+                .finally(() => {
+                    // 清除正在激活状态
+                    this.activatingTaskId = null;
+                });
         },
         handleEdit(task) {
             if (this.addingTask) {
@@ -271,7 +372,7 @@ Vue.createApp({
                 }
             };
             try {
-                const res = await fetch('http://localhost:8080/monitottask/update', {
+                const res = await fetch('http://localhost:8080/api/monitottask/update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -304,16 +405,16 @@ Vue.createApp({
             if (!confirm('确定要删除该任务吗？(删除定时任务会删除所有相关的扫描链接)')) {
                 return;
             }
-            
+
             var token = localStorage.getItem('token');
             console.log('删除任务，使用 token:', token);
             if (!token) {
                 alert('登录状态失效，请先登录');
                 return;
             }
-            
+
             try {
-                const res = await fetch('http://localhost:8080/monitottask/handleDelete', {
+                const res = await fetch('http://localhost:8080/api/monitottask/handleDelete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -321,12 +422,12 @@ Vue.createApp({
                     },
                     body: JSON.stringify(taskId)
                 });
-                
+
                 if (!res.ok) {
                     const errorData = await res.json();
                     throw new Error(errorData.message || '删除任务失败');
                 }
-                
+
                 const result = await res.json();
                 if (result.code === 200 && result.data === true) {
                     // 从前端列表中移除已删除的任务
@@ -339,57 +440,227 @@ Vue.createApp({
                 alert('删除任务失败：' + err.message);
             }
         },
-        handleAddLink(task) {
-            // 确保子表是展开的
-            this.showLinks = { ...this.showLinks, [task.id]: true };
-            
-            // 为测试目的，给任务添加一些固定的链接数据（如果还没有的话）
-            if (!task.links) {
-                task.links = [
-                    { id: 1, url: 'https://www.example.com', enabled: true, remark: '示例网站' },
-                    { id: 2, url: 'https://www.test.com', enabled: false, remark: '测试网站' },
-                    { id: 3, url: 'https://www.demo.com', enabled: true, remark: '演示网站' }
-                ];
-            }
-        },
-        handleEditLink(task, linkIdx) {
-            alert('编辑扫描链接功能开发中');
-        },
-        handleDeleteLink(task, linkIdx) {
-            if (confirm('确定要删除该扫描链接吗？')) {
-                task.links.splice(linkIdx, 1);
-            }
-        },
+
         addNewLink(task) {
-            if (!this.newLink.url) {
-                alert('请输入监控链接');
+            var thit = this
+            var token = localStorage.getItem('token');
+            console.log(task)
+        },
+        // 点击添加链接，显示当前所有可选择链接 allOptionalUrls
+        handleAddLink(task){
+            console.log('当前任务:', task);
+            console.log('可选链接列表:', this.allOptionalUrls);
+            this.currentAddLinkTask = task;
+            
+            // 总是清空选择，让用户手动选择
+            this.selectedUrlId = '';
+            
+            this.showAddLinkModal = true;
+            
+            // 添加下拉框变化监听器
+            this.$nextTick(() => {
+                const selectElement = document.querySelector('.link-select');
+                if (selectElement) {
+                    selectElement.addEventListener('change', (event) => {
+                        console.log('下拉框变化事件触发，selectedUrlId:', this.selectedUrlId);
+                        console.log('event.target.value:', event.target.value);
+                        console.log('allOptionalUrls:', this.allOptionalUrls);
+                    });
+                }
+            });
+        },
+
+        // 下拉框变化处理
+        onUrlSelectChange(event) {
+            console.log('下拉框变化事件触发，event.target.value:', event.target.value);
+            console.log('当前selectedUrlId:', this.selectedUrlId);
+            console.log('allOptionalUrls:', this.allOptionalUrls);
+            
+            // 确保selectedUrlId被正确设置
+            if (event.target.value) {
+                this.selectedUrlId = event.target.value;
+                console.log('已设置selectedUrlId为:', this.selectedUrlId);
+            }
+        },
+
+        // 关闭添加链接弹窗
+        closeAddLinkModal() {
+            this.showAddLinkModal = false;
+            this.selectedUrlId = '';
+            this.currentAddLinkTask = null;
+        },
+
+        // 确认添加链接
+        async confirmAddLink() {
+            if (!this.selectedUrlId) {
+                alert('请选择要添加的链接');
+                return;
+            }
+
+            if (!this.currentAddLinkTask) {
+                alert('未找到对应的任务');
+                return;
+            }
+
+            const selectedLink = this.selectedLinkDetail;
+            if (!selectedLink) {
+                alert('未找到选中的链接信息');
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('登录状态失效，请先登录');
+                return;
+            }
+
+            try {
+                // 构造请求数据
+                const payload = {
+                    taskId: this.currentAddLinkTask.id,
+                    url: selectedLink.url,
+                    remark: selectedLink.remark,
+                    enabled: true,
+                    classId: selectedLink.class_id,
+                    methodId: selectedLink.method_id,
+                    urlId: selectedLink.url_id
+                };
+
+                const res = await fetch('http://localhost:8080/api/monitottask/addLink', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || '添加链接失败');
+                }
+
+                const result = await res.json();
+                if (result.code === 200) {
+                    alert('链接添加成功');
+                    
+                    // 如果当前任务正在显示链接子表，则刷新链接列表
+                    if (this.showLinks[this.currentAddLinkTask.id]) {
+                        // 这里可以调用刷新链接列表的方法，或者直接添加到本地列表
+                        if (!this.currentAddLinkTask.links) {
+                            this.currentAddLinkTask.links = [];
+                        }
+                        this.currentAddLinkTask.links.push({
+                            id: result.data.id,
+                            taskId: this.currentAddLinkTask.id,
+                            url: selectedLink.url,
+                            enabled: true,
+                            remark: selectedLink.remark
+                        });
+                    }
+                    
+                    this.closeAddLinkModal();
+                } else {
+                    alert('添加失败：' + (result.message || '未知错误'));
+                }
+            } catch (err) {
+                alert('添加链接失败：' + err.message);
+            }
+        },
+        
+        // 切换链接状态
+        async toggleLinkStatus(link) {
+            if (!confirm(`确定要${link.enabled ? '关闭' : '启用'}该链接吗？`)) {
                 return;
             }
             
-            // 为新链接生成一个临时ID（实际应用中应该是后端返回的ID）
-            const newLinkId = (task.links.length > 0 ? Math.max(...task.links.map(l => l.id)) + 1 : 1);
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('登录状态失效，请先登录');
+                return;
+            }
             
-            // 添加新链接到任务的链接列表
-            task.links.push({
-                id: newLinkId,
-                url: this.newLink.url,
-                enabled: this.newLink.enabled,
-                remark: this.newLink.remark
-            });
+            try {
+                // 先保存原始状态，以便在失败时回滚
+                const originalEnabled = link.enabled;
+                
+                // 调用后端接口切换链接状态
+                const res = await fetch('http://localhost:8080/api/monitottask/toggleLinkStatus', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(link.id)
+                });
+                
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || '切换链接状态失败');
+                }
+                
+                const result = await res.json();
+                if (result.code === 200) {
+                    // 更新链接状态为后端返回的新状态
+                    link.enabled = result.data.enabled;
+                    alert(`链接已${link.enabled ? '启用' : '关闭'}`);
+                } else {
+                    alert('切换失败：' + (result.message || '未知错误'));
+                    // 如果后端失败，回滚状态
+                    link.enabled = originalEnabled;
+                }
+            } catch (err) {
+                alert('切换链接状态失败：' + err.message);
+                // 如果出错，回滚状态
+                link.enabled = !link.enabled;
+            }
+        },
+        
+        // 删除链接
+        async handleDeleteLink(task, idx) {
+            if (!confirm('确定要删除该链接吗？')) {
+                return;
+            }
             
-            // 清空输入框
-            this.newLink = {
-                url: '',
-                enabled: true,
-                remark: ''
-            };
-        },
-        toggleLinkStatus(link) {
-            link.enabled = !link.enabled;
-        },
-        closeSubTable(taskId) {
-            // 关闭指定任务的子表
-            this.showLinks = { ...this.showLinks, [taskId]: false };
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('登录状态失效，请先登录');
+                return;
+            }
+            
+            const link = task.links[idx];
+            if (!link || !link.id) {
+                alert('链接信息不完整，无法删除');
+                return;
+            }
+            
+            try {
+                const res = await fetch('http://localhost:8080/api/monitottask/deleteLink', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(link.id)
+                });
+                
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.message || '删除链接失败');
+                }
+                
+                const result = await res.json();
+                if (result.code === 200 && result.data === true) {
+                    // 从前端列表中移除已删除的链接
+                    task.links.splice(idx, 1);
+                    alert('链接删除成功');
+                } else {
+                    alert('删除失败：' + (result.message || '未知错误'));
+                }
+            } catch (err) {
+                alert('删除链接失败：' + err.message);
+            }
         }
+
     }
 }).mount('#monitorManagerApp');

@@ -13,4 +13,5 @@ public interface MonitorUrlRepository extends JpaRepository<MonitorUrl, Long> {
     
     // 根据任务和启用状态查询
     List<MonitorUrl> findByTaskIdAndEnabledTrue(Long taskId);
+    
 }

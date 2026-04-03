@@ -70,6 +70,18 @@ public class TaskScheduleConfig {
     private boolean enabled = true;
 
     /**
+     * 上次执行时间（由调度器更新）
+     */
+    @Column(name = "last_fire_time")
+    private LocalDateTime lastFireTime;
+
+    /**
+     * 下次执行时间（由调度器更新）
+     */
+    @Column(name = "next_fire_time")
+    private LocalDateTime nextFireTime;
+
+    /**
      * 创建时间
      */
     @Column(name = "created_at", updatable = false)
@@ -156,6 +168,18 @@ public class TaskScheduleConfig {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
+    public LocalDateTime getLastFireTime() {
+        return lastFireTime;
+    }
+    public void setLastFireTime(LocalDateTime lastFireTime) {
+        this.lastFireTime = lastFireTime;
+    }
+    public LocalDateTime getNextFireTime() {
+        return nextFireTime;
+    }
+    public void setNextFireTime(LocalDateTime nextFireTime) {
+        this.nextFireTime = nextFireTime;
+    }
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -181,6 +205,8 @@ public class TaskScheduleConfig {
                 ", endTime=" + endTime +
                 ", timePoint='" + timePoint + '\'' +
                 ", enabled=" + enabled +
+                ", lastFireTime=" + lastFireTime +
+                ", nextFireTime=" + nextFireTime +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
                 '}';

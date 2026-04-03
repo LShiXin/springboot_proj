@@ -4,18 +4,38 @@ import java.util.List;
 
 import com.shixin.entity.MonitorTaskListDTO;
 import com.shixin.entity.MonitorUrlListDTO;
+import com.shixin.entity.UserAllInfoDTO;
 
 public interface CacheService {
 
-    // 获取当前用户下的所有监控任务,将数据放到redis中,并设置过期时间为10分钟
+    // 缓存用户完整信息到Redis（包含用户基本信息和所有定时任务）
+    void cacheUserAllInfoToRedis(Long userId);
+    
+    // 获取用户完整信息
+    UserAllInfoDTO getUserAllInfo(Long userId);
+    
+    // 更新用户基本信息
+    void updateUserBaseInfo(Long userId, UserAllInfoDTO.UserBaseInfo baseInfo);
+    
+    // 更新用户定时任务列表
+    void updateUserTasks(Long userId, List<UserAllInfoDTO.TaskWithUrls> tasks);
+    
+    // 更新特定任务的链接
+    void updateTaskUrls(Long userId, Long taskId, List<MonitorUrlListDTO> urls);
+    
+    // 删除用户完整信息
+    void deleteUserAllInfo(Long userId);
+    
+    // 向后兼容的方法（可选）
+    @Deprecated
     void cacheMonitorTasksToRedis(Long userId);
-
-    // 获取当前用户下的所有监控链接,将数据放到redis中,并设置过期时间为10分钟
+    
+    @Deprecated
     void cacheMonitorTaskUrlsToRedis(Long userId);
-
-    // 根据用户ID查询所有监控任务，并转换为 MonitorTaskListDTO
+    
+    @Deprecated
     List<MonitorTaskListDTO> getTasksByUserId(Long userId);
-
-    // 根据用户ID查询所有监控链接，并转换为 MonitorUrlListDTO
+    
+    @Deprecated
     List<MonitorUrlListDTO> findListDtoByUserId(Long userId);
 }

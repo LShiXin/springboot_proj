@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 构建请求数据
         const loginData = JSON.stringify({ username, password });
-        const apiPath = "http://localhost:8080/login";
+        const apiPath = "http://localhost:8080/api/login";
 
         // 发送登录请求
         fetch(apiPath, {
@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 登录成功
                 showMessage('登录成功！', 'success');
                 localStorage.setItem('token', data.data.token);
+                console.log('Token已保存到localStorage:', data.data.token);
                 // 可选：登录成功后跳转
                 window.location.href = './index.html';
             } else {
@@ -69,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // 发送状态请求
-        fetch('http://localhost:8080/service/status', {
+        fetch('http://localhost:8080/api/api/service/status', {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token

@@ -81,7 +81,8 @@ createApp({
             const token = localStorage.getItem('token');
             console.log('获取用户信息，token:', token);
             if (!token) return;
-            var apiPath = "http://localhost:8080/user/refresh";
+            console.log(token);
+            var apiPath = "http://localhost:8080/api/user/refresh";
             try {
                 const res = await fetch(apiPath, {
                     method: 'POST',
