@@ -1,4 +1,4 @@
-package com.shixin.tool.crawler.beizhuxie;
+package com.shixin.tool.crawler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +29,8 @@ public class KeywordHighlighter {
             return text;
         }
 
-        // 分割关键词
-        String[] keywordArray = keywords.split(",");
+        // 分割关键词 - 支持中文逗号和英文逗号
+        String[] keywordArray = keywords.split("[,，]");
         List<String> keywordList = new ArrayList<>();
         
         for (String keyword : keywordArray) {
@@ -86,8 +86,8 @@ public class KeywordHighlighter {
             matchedKeywords.clear();
         }
 
-        // 分割关键词
-        String[] keywordArray = keywords.split(",");
+        // 分割关键词 - 支持中文逗号和英文逗号
+        String[] keywordArray = keywords.split("[,，]");
         List<String> keywordList = new ArrayList<>();
         
         for (String keyword : keywordArray) {
@@ -141,8 +141,8 @@ public class KeywordHighlighter {
             return false;
         }
 
-        // 分割关键词
-        String[] keywordArray = keywords.split(",");
+        // 分割关键词 - 支持中文逗号和英文逗号
+        String[] keywordArray = keywords.split("[,，]");
         
         for (String keyword : keywordArray) {
             String trimmed = keyword.trim();
@@ -166,8 +166,8 @@ public class KeywordHighlighter {
             return "";
         }
 
-        // 分割关键词
-        String[] keywordArray = keywords.split(",");
+        // 分割关键词 - 支持中文逗号和英文逗号
+        String[] keywordArray = keywords.split("[,，]");
         List<String> matchedKeywords = new ArrayList<>();
         
         for (String keyword : keywordArray) {
@@ -195,8 +195,8 @@ public class KeywordHighlighter {
             return text;
         }
 
-        // 分割关键词
-        String[] keywordArray = keywords.split(",");
+        // 分割关键词 - 支持中文逗号和英文逗号
+        String[] keywordArray = keywords.split("[,，]");
         List<String> keywordList = new ArrayList<>();
         
         for (String keyword : keywordArray) {

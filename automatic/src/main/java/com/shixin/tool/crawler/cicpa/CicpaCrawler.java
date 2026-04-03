@@ -1,4 +1,4 @@
-package com.shixin.tool.crawler.beizhuxie;
+package com.shixin.tool.crawler.cicpa;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -24,20 +24,26 @@ import com.shixin.repository.NotificationRepository;
 import com.shixin.tool.crawler.KeywordHighlighter;
 
 /**
- * 北注协培训通知爬虫工具类
- * 爬取北京注册会计师协会培训通知
- * 网址：https://www.bicpa.org.cn/p1/pxxx.html
- * 翻页：https://www.bicpa.org.cn/p1/pxxx_2.html, https://www.bicpa.org.cn/p1/pxxx_3.html 等
+ * 中注协爬虫工具类
+ * 爬取中国注册会计师协会的通知公告和要闻
+ * 要闻网址：https://www.cicpa.org.cn/xxfb/news/ （第一页）
+ * 要闻翻页：https://www.cicpa.org.cn/xxfb/news/index_1.html, https://www.cicpa.org.cn/xxfb/news/index_2.html 等
+ * 通知公告网址：https://www.cicpa.org.cn/xxfb/tzgg/ （第一页）
+ * 通知公告翻页：https://www.cicpa.org.cn/xxfb/tzgg/index_1.html, https://www.cicpa.org.cn/xxfb/tzgg/index_2.html 等
  */
 @Component
-public class BeizhuxieTrainingCrawler {
+public class CicpaCrawler {
 
-    private static final Logger logger = LoggerFactory.getLogger(BeizhuxieTrainingCrawler.class);
+    private static final Logger logger = LoggerFactory.getLogger(CicpaCrawler.class);
 
     // 基础URL
-    private static final String BASE_URL = "https://www.bicpa.org.cn/p1/pxxx";
-    private static final String BASE_PAGE_URL = BASE_URL + ".html";
-    private static final String PAGE_URL_TEMPLATE = BASE_URL + "_%d.html";
+    private static final String NEWS_BASE_URL = "https://www.cicpa.org.cn/xxfb/news";
+    private static final String NEWS_BASE_PAGE_URL = NEWS_BASE_URL + "/";
+    private static final String NEWS_PAGE_URL_TEMPLATE = NEWS_BASE_URL + "/index_%d.html";
+    
+    private static final String NOTICE_BASE_URL = "https://www.cicpa.org.cn/xxfb/tzgg";
+    private static final String NOTICE_BASE_PAGE_URL = NOTICE_BASE_URL + "/";
+    private static final String NOTICE_PAGE_URL_TEMPLATE = NOTICE_BASE_URL + "/index_%d.html";
 
     // 日期格式化器
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -53,29 +59,29 @@ public class BeizhuxieTrainingCrawler {
     private NotificationRepository notificationRepository;
 
     /**
-     * 爬取培训通知
+     * 爬取中注协要闻
      * 
      * @param userId 用户ID
      * @param taskId 任务ID
      * @param keywords 关键词（多个用逗号分隔）
      * @return 爬取到的通知数量
      */
-    public int crawlTrainingNotifications(Long userId, Long taskId, String keywords) {
-        logger.info("开始爬取北注协培训通知，用户ID: {}, 任务ID: {}, 关键词: {}", userId, taskId, keywords);
+    public int crawlNews(Long userId, Long taskId, String keywords) {
+        logger.info("开始爬取中注协要闻，用户ID: {}, 任务ID: {}, 关键词: {}", userId, taskId, keywords);
 
         int totalNotifications = 0;
-        int page = 1;
+        int page = 0; // 第一页是index.html，第二页是index_1.html
         boolean hasMorePages = true;
         LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
 
         try {
             while (hasMorePages) {
-                String pageUrl = getPageUrl(page);
-                logger.info("爬取第 {} 页: {}", page, pageUrl);
+                String pageUrl = getNewsPageUrl(page);
+                logger.info("爬取第 {} 页: {}", page + 1, pageUrl);
 
                 Document doc = fetchDocument(pageUrl);
                 if (doc == null) {
-                    logger.warn("无法获取第 {} 页内容，停止爬取", page);
+                    logger.warn("无法获取第 {} 页内容，停止爬取", page + 1);
                     break;
                 }
 
@@ -101,20 +107,86 @@ public class BeizhuxieTrainingCrawler {
             logger.error("爬取过程被中断", e);
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            logger.error("爬取北注协培训通知时发生错误", e);
+            logger.error("爬取中注协要闻时发生错误", e);
         }
 
         return totalNotifications;
     }
 
     /**
-     * 获取页面URL
+     * 爬取中注协通知公告
+     * 
+     * @param userId 用户ID
+     * @param taskId 任务ID
+     * @param keywords 关键词（多个用逗号分隔）
+     * @return 爬取到的通知数量
      */
-    private String getPageUrl(int page) {
-        if (page <= 1) {
-            return BASE_PAGE_URL;
+    public int crawlNotices(Long userId, Long taskId, String keywords) {
+        logger.info("开始爬取中注协通知公告，用户ID: {}, 任务ID: {}, 关键词: {}", userId, taskId, keywords);
+
+        int totalNotifications = 0;
+        int page = 0; // 第一页是index.html，第二页是index_1.html
+        boolean hasMorePages = true;
+        LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
+
+        try {
+            while (hasMorePages) {
+                String pageUrl = getNoticePageUrl(page);
+                logger.info("爬取第 {} 页: {}", page + 1, pageUrl);
+
+                Document doc = fetchDocument(pageUrl);
+                if (doc == null) {
+                    logger.warn("无法获取第 {} 页内容，停止爬取", page + 1);
+                    break;
+                }
+
+                // 解析通知列表
+                List<Notification> notifications = parseNotifications(doc, userId, taskId, keywords, oneMonthAgo);
+                
+                // 保存通知
+                for (Notification notification : notifications) {
+                    saveNotificationIfNotExists(notification);
+                    totalNotifications++;
+                }
+
+                // 检查是否有下一页
+                hasMorePages = hasNextPage(doc);
+                page++;
+
+                // 避免请求过于频繁
+                Thread.sleep(1000);
+            }
+
+            logger.info("爬取完成，共找到 {} 条相关通知", totalNotifications);
+        } catch (InterruptedException e) {
+            logger.error("爬取过程被中断", e);
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            logger.error("爬取中注协通知公告时发生错误", e);
+        }
+
+        return totalNotifications;
+    }
+
+    /**
+     * 获取要闻页面URL
+     */
+    private String getNewsPageUrl(int page) {
+        if (page <= 0) {
+            return NEWS_BASE_PAGE_URL;
         } else {
-            return String.format(PAGE_URL_TEMPLATE, page);
+            return String.format(NEWS_PAGE_URL_TEMPLATE, page);
+        }
+    }
+
+    /**
+     * 获取通知公告页面URL
+     */
+    private String getNoticePageUrl(int page) {
+        if (page <= 0) {
+            return NOTICE_BASE_PAGE_URL;
+        } else {
+            return String.format(NOTICE_PAGE_URL_TEMPLATE, page);
         }
     }
 
@@ -140,13 +212,13 @@ public class BeizhuxieTrainingCrawler {
                                                  String keywords, LocalDateTime oneMonthAgo) {
         List<Notification> notifications = new ArrayList<>();
 
-        // 根据实际网页结构选择合适的选择器
-        // 这里使用通用的选择器，可能需要根据实际网页结构调整
-        Elements newsItems = doc.select(".news-list li, .list li, .article-list li, tr");
+        // 根据中注协网页结构选择合适的选择器
+        // 网站实际结构：<ul class="j-list-inline" id="sub"> <li>...</li> </ul>
+        Elements newsItems = doc.select(".j-list-inline li");
         
         if (newsItems.isEmpty()) {
-            // 尝试其他常见的选择器
-            newsItems = doc.select("div[class*=news], div[class*=list], table tr");
+            // 尝试其他常见的选择器作为后备
+            newsItems = doc.select(".news-list li, .list li, .article-list li, tr");
         }
 
         for (Element item : newsItems) {
@@ -227,9 +299,9 @@ public class BeizhuxieTrainingCrawler {
         if (relativeUrl.startsWith("http://") || relativeUrl.startsWith("https://")) {
             return relativeUrl;
         } else if (relativeUrl.startsWith("/")) {
-            return "https://www.bicpa.org.cn" + relativeUrl;
+            return "https://www.cicpa.org.cn" + relativeUrl;
         } else {
-            return "https://www.bicpa.org.cn/p1/" + relativeUrl;
+            return "https://www.cicpa.org.cn/xxfb/" + relativeUrl;
         }
     }
 
@@ -389,7 +461,7 @@ public class BeizhuxieTrainingCrawler {
     }
 
     /**
-     * 按照需求策略爬取培训通知
+     * 按照需求策略爬取中注协通知
      * 策略：1.先对第一页的通知进行处理
      *       2.每处理一条通知就与该定时任务的关键词进行对比
      *       3.如果存在关键词就保存进数据库
@@ -400,36 +472,38 @@ public class BeizhuxieTrainingCrawler {
      * @param userId 用户ID
      * @param taskId 任务ID
      * @param keywords 关键词（多个用逗号分隔）
+     * @param isNews 是否为要闻（true为要闻，false为通知公告）
      * @return 爬取到的通知数量
      */
-    public int crawlTrainingNotificationsWithStrategy(Long userId, Long taskId, String keywords) {
-        logger.info("开始按照策略爬取北注协培训通知，用户ID: {}, 任务ID: {}, 关键词: {}", userId, taskId, keywords);
+    public int crawlNotificationsWithStrategy(Long userId, Long taskId, String keywords, boolean isNews) {
+        logger.info("开始按照策略爬取中注协{}，用户ID: {}, 任务ID: {}, 关键词: {}", 
+                   isNews ? "要闻" : "通知公告", userId, taskId, keywords);
         
         int totalNotifications = 0;
-        int page = 1;
+        int page = 0; // 第一页是index.html，第二页是index_1.html
         boolean shouldContinue = true;
         LocalDateTime oneMonthAgo = LocalDateTime.now().minusMonths(1);
         
         try {
             while (shouldContinue) {
-                String pageUrl = getPageUrl(page);
-                logger.info("爬取第 {} 页: {}", page, pageUrl);
+                String pageUrl = isNews ? getNewsPageUrl(page) : getNoticePageUrl(page);
+                logger.info("爬取第 {} 页: {}", page + 1, pageUrl);
                 
                 Document doc = fetchDocument(pageUrl);
                 if (doc == null) {
-                    logger.warn("无法获取第 {} 页内容，停止爬取", page);
+                    logger.warn("无法获取第 {} 页内容，停止爬取", page + 1);
                     break;
                 }
                 
                 // 解析当前页面的通知项
-                Elements newsItems = doc.select(".news-list li, .list li, .article-list li, tr");
+                // 网站实际结构：<ul class="j-list-inline" id="sub"> <li>...</li> </ul>
+                Elements newsItems = doc.select(".j-list-inline li");
                 if (newsItems.isEmpty()) {
-                    // 尝试其他常见的选择器
-                    newsItems = doc.select("div[class*=news], div[class*=list], table tr");
+                    // 尝试其他常见的选择器作为后备
+                    newsItems = doc.select(".news-list li, .list li, .article-list li, tr");
                 }
-                
                 if (newsItems.isEmpty()) {
-                    logger.warn("第 {} 页没有找到通知项，停止爬取", page);
+                    logger.warn("第 {} 页没有找到通知项，停止爬取", page + 1);
                     break;
                 }
                 
@@ -461,7 +535,7 @@ public class BeizhuxieTrainingCrawler {
                 // 检查是否应该继续下一页
                 if (foundOutOfMonth) {
                     // 如果当前页发现了超过一个月前的通知，停止扫描
-                    logger.info("第 {} 页发现超过一个月前的通知，停止扫描后续页面", page);
+                    logger.info("第 {} 页发现超过一个月前的通知，停止扫描后续页面", page + 1);
                     shouldContinue = false;
                 } else {
                     // 检查是否有下一页
@@ -478,7 +552,7 @@ public class BeizhuxieTrainingCrawler {
             logger.error("爬取过程被中断", e);
             Thread.currentThread().interrupt();
         } catch (Exception e) {
-            logger.error("按照策略爬取北注协培训通知时发生错误", e);
+            logger.error("按照策略爬取中注协{}时发生错误", isNews ? "要闻" : "通知公告", e);
         }
         
         return totalNotifications;
@@ -546,17 +620,17 @@ public class BeizhuxieTrainingCrawler {
      * 测试爬虫功能
      */
     public void testCrawler() {
-        logger.info("开始测试北注协培训通知爬虫...");
+        logger.info("开始测试中注协爬虫...");
         
         try {
-            Document doc = fetchDocument(BASE_PAGE_URL);
+            Document doc = fetchDocument(NEWS_BASE_PAGE_URL);
             if (doc != null) {
-                logger.info("成功连接到北注协网站");
+                logger.info("成功连接到中注协要闻页面");
                 logger.info("页面标题: {}", doc.title());
                 
                 // 测试解析通知
                 List<Notification> testNotifications = parseNotifications(
-                    doc, 1L, 1L, "培训,通知", LocalDateTime.now().minusMonths(1)
+                    doc, 1L, 1L, "通知,公告", LocalDateTime.now().minusMonths(1)
                 );
                 
                 logger.info("测试解析到 {} 条通知", testNotifications.size());
@@ -564,7 +638,25 @@ public class BeizhuxieTrainingCrawler {
                     logger.info("测试通知: {}", notification.getTitle());
                 }
             } else {
-                logger.error("无法连接到北注协网站");
+                logger.error("无法连接到中注协要闻页面");
+            }
+            
+            doc = fetchDocument(NOTICE_BASE_PAGE_URL);
+            if (doc != null) {
+                logger.info("成功连接到中注协通知公告页面");
+                logger.info("页面标题: {}", doc.title());
+                
+                // 测试解析通知
+                List<Notification> testNotifications = parseNotifications(
+                    doc, 1L, 1L, "通知,公告", LocalDateTime.now().minusMonths(1)
+                );
+                
+                logger.info("测试解析到 {} 条通知", testNotifications.size());
+                for (Notification notification : testNotifications) {
+                    logger.info("测试通知: {}", notification.getTitle());
+                }
+            } else {
+                logger.error("无法连接到中注协通知公告页面");
             }
         } catch (Exception e) {
             logger.error("测试爬虫时发生错误", e);

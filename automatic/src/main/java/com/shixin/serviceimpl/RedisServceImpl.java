@@ -158,4 +158,36 @@ public class RedisServceImpl implements RedisService {
         org.slf4j.LoggerFactory.getLogger(RedisServceImpl.class)
             .debug("执行队列已从Redis中清除");
     }
+    
+    @Override
+    public void removeTaskFromExecutionQueue(Long taskId) {
+        // 获取当前队列
+        List<String> taskJsonList = redisTemplate.opsForList().range(EXECUTION_QUEUE_KEY, 0, -1);
+        
+        if (taskJsonList == null || taskJsonList.isEmpty()) {
+            return;
+        }
+        
+        // 查找要删除的任务
+        String taskToRemove = null;
+        for (String taskJson : taskJsonList) {
+            TaskScheduleConfig config = JSON.parseObject(taskJson, TaskScheduleConfig.class);
+            if (config.getId() != null && config.getId().equals(taskId)) {
+                taskToRemove = taskJson;
+                break;
+            }
+        }
+        
+        if (taskToRemove != null) {
+            // 从列表中移除该任务
+            // 注意：Redis的LREM命令会移除所有匹配的元素，但我们只移除第一个匹配的
+            redisTemplate.opsForList().remove(EXECUTION_QUEUE_KEY, 1, taskToRemove);
+            
+            org.slf4j.LoggerFactory.getLogger(RedisServceImpl.class)
+                .debug("已从执行队列中删除任务: {}", taskId);
+        } else {
+            org.slf4j.LoggerFactory.getLogger(RedisServceImpl.class)
+                .debug("未在执行队列中找到任务: {}", taskId);
+        }
+    }
 }

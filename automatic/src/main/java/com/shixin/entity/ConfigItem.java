@@ -22,7 +22,7 @@ public class ConfigItem {
 
     // Getter 和 Setter
     public int getUrl_id() { return url_id; }
-    public void getUrl_id(int url_id) { this.url_id = url_id; }
+    public void setUrl_id(int url_id) { this.url_id = url_id; }
 
     public String getClass_id() { return class_id; }
     public void setClass_id(String class_id) { this.class_id = class_id; }
@@ -39,7 +39,8 @@ public class ConfigItem {
     @Override
     public String toString() {
         return "ConfigItem{" +
-                "class_id='" + class_id + '\'' +
+                "url_id=" + url_id +
+                ", class_id='" + class_id + '\'' +
                 ", method_id='" + method_id + '\'' +
                 ", url='" + url + '\'' +
                 ", remark='" + remark + '\'' +

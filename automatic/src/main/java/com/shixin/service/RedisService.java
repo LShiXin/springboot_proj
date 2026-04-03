@@ -33,5 +33,11 @@ public interface RedisService {
     List<TaskScheduleConfig> getExecutionQueue();
     
     void clearExecutionQueue();
+    
+    /**
+     * 从执行队列中删除指定的任务
+     * @param taskId 要删除的任务ID
+     */
+    void removeTaskFromExecutionQueue(Long taskId);
 
 }

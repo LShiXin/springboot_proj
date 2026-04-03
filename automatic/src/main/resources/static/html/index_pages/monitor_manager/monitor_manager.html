@@ -176,13 +176,14 @@
             <div class="modal-body">
                 <div class="form-group">
                     <label>选择扫描链接：</label>
-                    <select v-model="selectedUrlId" class="link-select" @change="onUrlSelectChange">
+                    <select v-model="selectedUrlId" class="link-select" @input="onUrlSelectChange">
                         <option value="">请选择链接</option>
-                        <option v-for="item in allOptionalUrls" :key="item.url_id" :value="String(item.url_id)">
-                            {{ item.remark }} - {{ item.url }}
+                        <option v-for="item in filteredOptionalUrls" :key="item.url_id" :value="item.url_id" 
+                                :disabled="item.isAdded" :class="{ 'option-added': item.isAdded }">
+                            {{ item.remark }} - {{ item.url }} {{ item.isAdded ? '(已添加)' : '' }}
                         </option>
                     </select>
-                    <div v-if="allOptionalUrls.length === 0" class="empty-hint" style="color: #f56c6c; font-size: 12px; margin-top: 5px;">
+                    <div v-if="filteredOptionalUrls.length === 0" class="empty-hint" style="color: #f56c6c; font-size: 12px; margin-top: 5px;">
                         暂无可用链接，请先添加基础链接
                     </div>
                     <div v-else-if="selectedUrlId === ''" class="select-hint" style="color: #e6a23c; font-size: 12px; margin-top: 5px;">
@@ -190,6 +191,9 @@
                     </div>
                     <div v-else class="selected-hint" style="color: #67c23a; font-size: 12px; margin-top: 5px;">
                         已选择链接，可以点击确认添加
+                    </div>
+                    <div v-if="filteredOptionalUrls.some(item => item.isAdded)" class="added-info" style="color: #999; font-size: 12px; margin-top: 5px;">
+                        灰色选项表示该链接已添加到当前任务中，无法重复添加
                     </div>
                 </div>
                 <!-- 显示选中链接的详细信息 -->

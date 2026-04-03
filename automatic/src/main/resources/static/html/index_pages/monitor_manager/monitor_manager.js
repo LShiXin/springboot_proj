@@ -56,8 +56,28 @@ Vue.createApp({
         },
         // 计算属性：获取选中的链接详情
         selectedLinkDetail() {
-            if (!this.selectedUrlId) return null;
-            return this.allOptionalUrls.find(item => item.url_id == this.selectedUrlId);
+            if (!this.selectedUrlId || !this.allOptionalUrls || this.allOptionalUrls.length === 0) {
+                return null;
+            }
+            
+            // 将selectedUrlId转换为字符串进行比较，确保类型一致
+            const selectedIdStr = String(this.selectedUrlId);
+            const foundItem = this.allOptionalUrls.find(item => {
+                // 确保item和item.url_id存在
+                if (!item || item.url_id === undefined || item.url_id === null) {
+                    return false;
+                }
+                // 将url_id转换为字符串进行比较
+                return String(item.url_id) === selectedIdStr;
+            });
+            
+            console.log('selectedLinkDetail计算属性执行:');
+            console.log('  selectedUrlId:', this.selectedUrlId);
+            console.log('  selectedIdStr:', selectedIdStr);
+            console.log('  allOptionalUrls长度:', this.allOptionalUrls.length);
+            console.log('  找到的项:', foundItem);
+            
+            return foundItem || null;
         },
         // 计算属性：获取按钮提示信息
         buttonTooltip() {
@@ -68,6 +88,37 @@ Vue.createApp({
             } else {
                 return '点击确认添加选中的链接';
             }
+        },
+        // 计算属性：获取当前任务已添加的链接ID集合
+        currentTaskAddedLinkIds() {
+            if (!this.currentAddLinkTask || !this.currentAddLinkTask.links) {
+                return new Set();
+            }
+            // 获取当前任务已添加链接的URL集合，用于去重检查
+            return new Set(this.currentAddLinkTask.links.map(link => link.url));
+        },
+        // 计算属性：过滤可选链接，标记已添加的链接
+        filteredOptionalUrls() {
+            if (!this.allOptionalUrls || this.allOptionalUrls.length === 0) {
+                return [];
+            }
+            
+            // 如果没有当前任务或当前任务没有链接，返回所有可选链接
+            if (!this.currentAddLinkTask || !this.currentAddLinkTask.links || this.currentAddLinkTask.links.length === 0) {
+                return this.allOptionalUrls.map(item => ({
+                    ...item,
+                    isAdded: false
+                }));
+            }
+            
+            // 获取当前任务已添加链接的URL集合
+            const addedUrls = new Set(this.currentAddLinkTask.links.map(link => link.url));
+            
+            // 标记哪些链接已经添加
+            return this.allOptionalUrls.map(item => ({
+                ...item,
+                isAdded: addedUrls.has(item.url)
+            }));
         }
     },
     methods: {
@@ -106,6 +157,7 @@ Vue.createApp({
                 if (result.code === 200 && result.data) {
                     thit.allOptionalUrls = result.data;
                     console.log('成功加载可选链接:', thit.allOptionalUrls.length, '个');
+                    console.log('可选链接数据:', thit.allOptionalUrls);
                 } else {
                     console.warn('加载可选链接失败:', result.message || '未知错误');
                     thit.allOptionalUrls = [];
@@ -447,7 +499,7 @@ Vue.createApp({
             console.log(task)
         },
         // 点击添加链接，显示当前所有可选择链接 allOptionalUrls
-        handleAddLink(task){
+        async handleAddLink(task){
             console.log('当前任务:', task);
             console.log('可选链接列表:', this.allOptionalUrls);
             this.currentAddLinkTask = task;
@@ -455,32 +507,41 @@ Vue.createApp({
             // 总是清空选择，让用户手动选择
             this.selectedUrlId = '';
             
-            this.showAddLinkModal = true;
+            // 如果当前任务还没有加载links数据，先加载
+            if (!task.links || task.links.length === 0) {
+                console.log('当前任务links未加载，先获取links数据');
+                await this.getTaskUrls(task.id);
+            }
             
-            // 添加下拉框变化监听器
-            this.$nextTick(() => {
-                const selectElement = document.querySelector('.link-select');
-                if (selectElement) {
-                    selectElement.addEventListener('change', (event) => {
-                        console.log('下拉框变化事件触发，selectedUrlId:', this.selectedUrlId);
-                        console.log('event.target.value:', event.target.value);
-                        console.log('allOptionalUrls:', this.allOptionalUrls);
-                    });
-                }
-            });
+            this.showAddLinkModal = true;
         },
 
         // 下拉框变化处理
         onUrlSelectChange(event) {
-            console.log('下拉框变化事件触发，event.target.value:', event.target.value);
-            console.log('当前selectedUrlId:', this.selectedUrlId);
-            console.log('allOptionalUrls:', this.allOptionalUrls);
             
-            // 确保selectedUrlId被正确设置
-            if (event.target.value) {
-                this.selectedUrlId = event.target.value;
-                console.log('已设置selectedUrlId为:', this.selectedUrlId);
+            // 获取选中的option
+            if (event?.target?.options) {
+                const selectedOption = event.target.options[event.target.selectedIndex];
             }
+            
+            // 尝试多种方式获取值
+            let selectedValue = null;
+            if (event?.target?.value !== undefined) {
+                selectedValue = event.target.value;
+                console.log('14. 从event.target.value获取值:', selectedValue);
+            }
+            
+            // 也检查selectedIndex
+            if (event?.target?.selectedIndex !== undefined && event.target.selectedIndex >= 0) {
+                const option = event.target.options[event.target.selectedIndex];
+                if (option && option.value !== undefined) {
+                    console.log('15. 从selectedIndex获取option值:', option.value);
+                    if (!selectedValue) {
+                        selectedValue = option.value;
+                    }
+                }
+            }
+
         },
 
         // 关闭添加链接弹窗
@@ -492,12 +553,15 @@ Vue.createApp({
 
         // 确认添加链接
         async confirmAddLink() {
+            
             if (!this.selectedUrlId) {
+                console.error('错误：没有选中的链接ID');
                 alert('请选择要添加的链接');
                 return;
             }
 
             if (!this.currentAddLinkTask) {
+                console.error('错误：没有当前任务');
                 alert('未找到对应的任务');
                 return;
             }
@@ -506,6 +570,18 @@ Vue.createApp({
             if (!selectedLink) {
                 alert('未找到选中的链接信息');
                 return;
+            }
+
+            // 检查链接是否已经添加到当前任务中
+            if (this.currentAddLinkTask.links && this.currentAddLinkTask.links.length > 0) {
+                const isAlreadyAdded = this.currentAddLinkTask.links.some(link => 
+                    link.url === selectedLink.url
+                );
+                
+                if (isAlreadyAdded) {
+                    alert('该链接已经添加到当前任务中，不能重复添加');
+                    return;
+                }
             }
 
             const token = localStorage.getItem('token');
@@ -525,7 +601,7 @@ Vue.createApp({
                     methodId: selectedLink.method_id,
                     urlId: selectedLink.url_id
                 };
-
+                
                 const res = await fetch('http://localhost:8080/api/monitottask/addLink', {
                     method: 'POST',
                     headers: {
@@ -541,6 +617,8 @@ Vue.createApp({
                 }
 
                 const result = await res.json();
+                console.log('8. 后端响应:', result);
+                
                 if (result.code === 200) {
                     alert('链接添加成功');
                     

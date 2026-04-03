@@ -30,7 +30,7 @@ public class BaseUrlsManagerServiceImpl implements BaseUrlsManagerService {
     public List<ConfigItem> loadPotional_Urls() {
         ObjectMapper mapper = new ObjectMapper();
         String redis_data=redisService.getFromRedis(key_optionalUrls);
-        log.debug("从redis中获取的数据为: {}", redis_data);
+        // log.debug("从redis中获取的数据为: {}", redis_data);
         if(redis_data == null){
             // 如果redis里面是空，就获取json的文件并加载到redis中
                 try (InputStream is = getClass().getClassLoader().getResourceAsStream("Optional_field.json")) {
@@ -49,6 +49,24 @@ public class BaseUrlsManagerServiceImpl implements BaseUrlsManagerService {
         }else{
              log.info("从redis中读取数据");
             return JSON.parseArray(redis_data, ConfigItem.class);
+        }
+    }
+    
+    @Override
+    public List<ConfigItem> reloadPotional_UrlsFromJson() {
+        ObjectMapper mapper = new ObjectMapper();
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("Optional_field.json")) {
+            if (is == null) {
+                throw new IOException("文件未找到在类路径中: Optional_field.json");
+            }
+            List<ConfigItem> result = mapper.readValue(is, new TypeReference<List<ConfigItem>>() {});
+            log.info("强制从JSON文件重新加载数据，加载了 {} 条记录\n数据为：{}", result.size(), result);
+            redisService.saveToRedis(key_optionalUrls, JSON.toJSONString(result), 8640);
+            log.info("强制从JSON文件重新加载数据到Redis，加载了 {} 条记录", result.size());
+            return result;
+        } catch (IOException e) {
+            log.error("强制重新加载可选URL配置文件失败", e);
+            return Collections.emptyList();
         }
     }
 }

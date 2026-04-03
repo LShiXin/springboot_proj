@@ -468,6 +468,26 @@
 .modal-footer .confirm-btn:disabled {
     animation: pulse-disabled 2s infinite;
 }
+
+/* 已添加链接的样式 - 灰色不可选 */
+.option-added {
+    background-color: #f5f5f5 !important;
+    color: #999 !important;
+    cursor: not-allowed !important;
+}
+
+.option-added:hover {
+    background-color: #f5f5f5 !important;
+    color: #999 !important;
+}
+
+/* 已添加链接的提示文本 */
+.added-hint {
+    color: #999;
+    font-size: 12px;
+    margin-left: 5px;
+    font-style: italic;
+}
 [v-cloak] {
   display: none !important;
 }

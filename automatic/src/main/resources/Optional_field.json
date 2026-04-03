@@ -6,5 +6,39 @@
         "url":"https://www.bicpa.org.cn/p1/pxxx.html",
         "remark":"北注协培训通知"
 
+    },
+    {   
+        "url_id":2,
+        "class_id":"class_1",  
+        "method_id":"beizhuxie_tongzhigonggao",
+        "url":"https://www.bicpa.org.cn/p1/tzgg.html",
+        "remark":"北注协通知公告"
+
+    },
+    {   
+        "url_id":3,
+        "class_id":"class_1",  
+        "method_id":"beizhuxie_hangyedongtai",
+        "url":"https://www.bicpa.org.cn/p1/xydt.html",
+        "remark":"北注协行业动态"
+
+    },
+    {   
+        "url_id":4,
+        "class_id":"class_2",  
+        "method_id":"zhongzhuxie_yaowen",
+        "url":"https://www.cicpa.org.cn/xxfb/news/",
+        "remark":"中注协要闻"
+
+    },
+    {   
+        "url_id":5,
+        "class_id":"class_2",  
+        "method_id":"zhongzhuxie_tongzhigonggao",
+        "url":"https://www.cicpa.org.cn/xxfb/tzgg/",
+        "remark":"中注协通知公告"
+
     }
+    
+
 ]

@@ -3,13 +3,16 @@ package com.shixin.serviceimpl;
 import com.shixin.entity.MonitorTask;
 import com.shixin.entity.MonitorUrl;
 import com.shixin.entity.TaskScheduleConfig;
+import com.shixin.repository.TaskScheduleConfigRepository;
 import com.shixin.service.RedisService;
 import com.shixin.tool.crawler.beizhuxie.BeizhuxieTrainingCrawler;
+import com.shixin.tool.crawler.cicpa.CicpaCrawler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,7 +31,13 @@ public class ScheduledTaskExecutor {
     private RedisService redisService;
 
     @Autowired
+    private TaskScheduleConfigRepository taskScheduleConfigRepository;
+
+    @Autowired
     private BeizhuxieTrainingCrawler beizhuxieTrainingCrawler;
+    
+    @Autowired
+    private CicpaCrawler cicpaCrawler;
 
     /**
      * 每分钟检查一次待执行队列，执行到时间的任务
@@ -67,8 +76,13 @@ public class ScheduledTaskExecutor {
                     // 更新任务的下次执行时间（如果需要）
                     updateNextFireTime(config);
 
-                    // 从队列中移除已执行的任务（这里简化处理，实际可能需要重新排序队列）
-                    // 注意：Redis列表操作可能需要重新保存整个队列
+                    // 从Redis待执行列表中删除该任务
+                    redisService.removeTaskFromExecutionQueue(config.getId());
+                    log.info("已从Redis执行队列中删除任务: {}", config.getId());
+
+                    // 更新数据库中的任务信息（上次执行时间和下次执行时间）
+                    updateTaskInDatabase(config);
+                    
                 } else {
                     log.debug("任务 {} 还未到执行时间: {}", config.getId(), config.getNextFireTime());
                 }
@@ -151,6 +165,29 @@ public class ScheduledTaskExecutor {
                 );
                 log.info("北注协爬虫完成，爬取到 {} 条相关通知", crawledCount);
 
+            } else if (urlStr.contains("cicpa.org.cn")) {
+                // 中注协爬虫
+                log.info("使用中注协爬虫处理链接: {}", url.getUrl());
+                
+                // 获取任务关键词
+                String keywords = monitorTask.getKeywords();
+                if (keywords == null || keywords.trim().isEmpty()) {
+                    log.warn("监控任务 {} 未设置关键词，将处理所有通知", monitorTask.getId());
+                    keywords = "";
+                }
+                
+                // 判断是要闻还是通知公告
+                boolean isNews = urlStr.contains("/news/");
+                
+                // 执行爬虫，按照需求：先处理第一页，逐条检查关键词，一个月限制
+                int crawledCount = cicpaCrawler.crawlNotificationsWithStrategy(
+                    monitorTask.getUser().getId(),
+                    monitorTask.getId(),
+                    keywords,
+                    isNews
+                );
+                log.info("中注协爬虫完成，爬取到 {} 条相关通知", crawledCount);
+
             } else {
                 // 其他类型的链接，可以在这里添加更多的爬虫类
                 log.warn("未找到适合的爬虫类处理链接: {}", url.getUrl());
@@ -191,6 +228,35 @@ public class ScheduledTaskExecutor {
                     log.info("一次性任务 {} 执行完成，不再设置下次执行时间", config.getId());
                     break;
             }
+        }
+    }
+
+    /**
+     * 更新数据库中的任务信息（上次执行时间和下次执行时间）
+     * @param config 定时任务配置
+     */
+    @Transactional
+    private void updateTaskInDatabase(TaskScheduleConfig config) {
+        try {
+            // 从数据库获取最新的任务配置
+            TaskScheduleConfig dbConfig = taskScheduleConfigRepository.findById(config.getId()).orElse(null);
+            if (dbConfig == null) {
+                log.warn("在数据库中未找到任务配置: {}", config.getId());
+                return;
+            }
+
+            // 更新上次执行时间和下次执行时间
+            dbConfig.setLastFireTime(config.getLastFireTime());
+            dbConfig.setNextFireTime(config.getNextFireTime());
+
+            // 保存到数据库
+            taskScheduleConfigRepository.save(dbConfig);
+            
+            log.info("已更新数据库中的任务 {} 的执行时间信息: lastFireTime={}, nextFireTime={}", 
+                    config.getId(), config.getLastFireTime(), config.getNextFireTime());
+                    
+        } catch (Exception e) {
+            log.error("更新数据库中的任务 {} 执行时间信息时发生错误", config.getId(), e);
         }
     }
 }

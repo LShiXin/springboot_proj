@@ -153,6 +153,7 @@ public class MonitorTaskController {
         //TODO: process POST request
         try{
             List<ConfigItem> load_list=baseUrlsManagerService.loadPotional_Urls();
+            // System.out.println("加载的可选链接列表：" + load_list);
             return ResponseEntity.status(200).body(ApiResponse.success(load_list));
         }catch (Exception e) {
             // TODO: handle exception
