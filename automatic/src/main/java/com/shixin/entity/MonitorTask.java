@@ -88,6 +88,7 @@ public class MonitorTask {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+
     // 无参构造方法（JPA 要求）
     public MonitorTask() {
     }
@@ -194,6 +195,7 @@ public class MonitorTask {
         this.updatedAt = updatedAt;
     }
 
+    
     @Override
     public String toString() {
         return "MonitorTask{" +

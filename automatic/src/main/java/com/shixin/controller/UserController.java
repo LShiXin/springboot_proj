@@ -20,8 +20,6 @@ import jakarta.servlet.http.HttpServletRequest;
 @RequestMapping("/api/user")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
     // 刷新用户数据，用户在跳转到新页面后，会调用这个接口来获取最新的用户数据
     // 这个接口会从数据库或redis中查询用户数据，并返回给前端
     @PostMapping("/refresh")

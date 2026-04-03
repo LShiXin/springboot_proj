@@ -190,6 +190,7 @@ Vue.createApp({
                 if (!res.ok) throw new Error('获取用户任务失败');
                 const result = await res.json();
                 thit.tasks = result.data; // 直接覆盖任务列表
+                console.log('加载用户任务:', result.data);
             } catch (err) {
                 alert('获取用户任务失败：' + err.message);
             }

@@ -13,6 +13,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(name = "task_schedule_config")
@@ -92,6 +93,13 @@ public class TaskScheduleConfig {
      */
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    /**
+     * 乐观锁版本号
+     */
+    @Version
+    @Column(name = "version")
+    private Integer version = 0;
 
     // 无参构造
     public TaskScheduleConfig() {}
@@ -193,6 +201,14 @@ public class TaskScheduleConfig {
         this.updatedAt = updatedAt;
     }
 
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
     @Override
     public String toString() {
         return "TaskScheduleConfig{" +
@@ -209,6 +225,7 @@ public class TaskScheduleConfig {
                 ", nextFireTime=" + nextFireTime +
                 ", createdAt=" + createdAt +
                 ", updatedAt=" + updatedAt +
+                ", version=" + version +
                 '}';
     }
 }

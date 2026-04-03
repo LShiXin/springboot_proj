@@ -157,6 +157,8 @@ public class UserAllInfoDTO {
         private java.time.LocalDateTime endTime;
         private Long intervalMinutes;
         private String timePoint;
+        private java.time.LocalDateTime lastExecutionTime;  // 上次执行时间
+        private java.time.LocalDateTime nextExecutionTime;  // 下次执行时间
         
         public TaskWithUrls() {
         }
@@ -179,6 +181,12 @@ public class UserAllInfoDTO {
                     this.intervalMinutes = task.getScheduleConfig().getIntervalMillis() / 60000;
                 }
             }
+            
+            // 设置执行时间信息（如果MonitorTask有这些字段）
+            // 注意：这里假设MonitorTask有lastExecutionTime和nextExecutionTime字段
+            // 如果没有，这些字段将保持为null
+            this.lastExecutionTime = task.getScheduleConfig().getLastFireTime();
+            this.nextExecutionTime = task.getScheduleConfig().getNextFireTime();
         }
         
         public Long getId() {
@@ -252,7 +260,23 @@ public class UserAllInfoDTO {
         public void setTimePoint(String timePoint) {
             this.timePoint = timePoint;
         }
-        
+
+        public java.time.LocalDateTime getLastExecutionTime() {
+            return lastExecutionTime;
+        }
+
+        public void setLastExecutionTime(java.time.LocalDateTime lastExecutionTime) {
+            this.lastExecutionTime = lastExecutionTime;
+        }
+
+        public java.time.LocalDateTime getNextExecutionTime() {
+            return nextExecutionTime;
+        }
+
+        public void setNextExecutionTime(java.time.LocalDateTime nextExecutionTime) {
+            this.nextExecutionTime = nextExecutionTime;
+        }
+
         @Override
         public String toString() {
             return "TaskWithUrls{" +
@@ -264,6 +288,8 @@ public class UserAllInfoDTO {
                     ", endTime=" + endTime +
                     ", intervalMinutes=" + intervalMinutes +
                     ", timePoint='" + timePoint + '\'' +
+                    ", lastExecutionTime=" + lastExecutionTime +
+                    ", nextExecutionTime=" + nextExecutionTime +
                     ", urls=" + urls +
                     '}';
         }

@@ -86,7 +86,7 @@ public class CicpaCrawler {
                 }
 
                 // 解析通知列表
-                List<Notification> notifications = parseNotifications(doc, userId, taskId, keywords, oneMonthAgo);
+                List<Notification> notifications = parseNotifications(doc, userId, taskId, keywords, oneMonthAgo, NEWS_BASE_URL);
                 
                 // 保存通知
                 for (Notification notification : notifications) {
@@ -141,7 +141,7 @@ public class CicpaCrawler {
                 }
 
                 // 解析通知列表
-                List<Notification> notifications = parseNotifications(doc, userId, taskId, keywords, oneMonthAgo);
+                List<Notification> notifications = parseNotifications(doc, userId, taskId, keywords, oneMonthAgo, NOTICE_BASE_URL);
                 
                 // 保存通知
                 for (Notification notification : notifications) {
@@ -210,6 +210,14 @@ public class CicpaCrawler {
      */
     private List<Notification> parseNotifications(Document doc, Long userId, Long taskId, 
                                                  String keywords, LocalDateTime oneMonthAgo) {
+        return parseNotifications(doc, userId, taskId, keywords, oneMonthAgo, NEWS_BASE_URL);
+    }
+    
+    /**
+     * 解析通知列表（带基础URL）
+     */
+    private List<Notification> parseNotifications(Document doc, Long userId, Long taskId, 
+                                                 String keywords, LocalDateTime oneMonthAgo, String baseUrl) {
         List<Notification> notifications = new ArrayList<>();
 
         // 根据中注协网页结构选择合适的选择器
@@ -223,7 +231,7 @@ public class CicpaCrawler {
 
         for (Element item : newsItems) {
             try {
-                Notification notification = parseNotificationItem(item, userId, taskId, keywords, oneMonthAgo);
+                Notification notification = parseNotificationItem(item, userId, taskId, keywords, oneMonthAgo, baseUrl);
                 if (notification != null) {
                     notifications.add(notification);
                 }
@@ -240,6 +248,14 @@ public class CicpaCrawler {
      */
     private Notification parseNotificationItem(Element item, Long userId, Long taskId, 
                                               String keywords, LocalDateTime oneMonthAgo) {
+        return parseNotificationItem(item, userId, taskId, keywords, oneMonthAgo, NEWS_BASE_URL);
+    }
+    
+    /**
+     * 解析单个通知项（带基础URL）
+     */
+    private Notification parseNotificationItem(Element item, Long userId, Long taskId, 
+                                              String keywords, LocalDateTime oneMonthAgo, String baseUrl) {
         // 提取标题和链接
         Element titleElement = item.selectFirst("a");
         if (titleElement == null) {
@@ -254,7 +270,7 @@ public class CicpaCrawler {
         }
 
         // 构建完整URL
-        String url = buildFullUrl(relativeUrl);
+        String url = buildFullUrl(relativeUrl, baseUrl);
 
         // 提取日期
         LocalDateTime notificationTime = extractNotificationTime(item);
@@ -296,12 +312,38 @@ public class CicpaCrawler {
      * 构建完整URL
      */
     private String buildFullUrl(String relativeUrl) {
+        return buildFullUrl(relativeUrl, "https://www.cicpa.org.cn/xxfb/");
+    }
+    
+    /**
+     * 构建完整URL（带基础URL）
+     */
+    private String buildFullUrl(String relativeUrl, String baseUrl) {
         if (relativeUrl.startsWith("http://") || relativeUrl.startsWith("https://")) {
             return relativeUrl;
         } else if (relativeUrl.startsWith("/")) {
             return "https://www.cicpa.org.cn" + relativeUrl;
         } else {
-            return "https://www.cicpa.org.cn/xxfb/" + relativeUrl;
+            // 处理 ./ 前缀
+            if (relativeUrl.startsWith("./")) {
+                relativeUrl = relativeUrl.substring(2);
+            }
+            // 处理 ../ 前缀（如果需要的话）
+            while (relativeUrl.startsWith("../")) {
+                relativeUrl = relativeUrl.substring(3);
+                // 从baseUrl中移除最后一级目录
+                int lastSlash = baseUrl.lastIndexOf('/');
+                if (lastSlash > 0) {
+                    baseUrl = baseUrl.substring(0, lastSlash);
+                }
+            }
+            
+            // 确保baseUrl以/结尾
+            if (!baseUrl.endsWith("/")) {
+                baseUrl = baseUrl + "/";
+            }
+            
+            return baseUrl + relativeUrl;
         }
     }
 
@@ -513,7 +555,7 @@ public class CicpaCrawler {
                     try {
                         // 解析单个通知项
                         Notification notification = parseNotificationItemWithStrategy(
-                            item, userId, taskId, keywords, oneMonthAgo
+                            item, userId, taskId, keywords, oneMonthAgo, isNews ? NEWS_BASE_URL : NOTICE_BASE_URL
                         );
                         
                         if (notification == null) {
@@ -558,12 +600,13 @@ public class CicpaCrawler {
         return totalNotifications;
     }
     
+    
     /**
-     * 按照策略解析单个通知项
+     * 按照策略解析单个通知项（带基础URL）
      * 返回null表示通知时间超过一个月
      */
     private Notification parseNotificationItemWithStrategy(Element item, Long userId, Long taskId, 
-                                                         String keywords, LocalDateTime oneMonthAgo) {
+                                                         String keywords, LocalDateTime oneMonthAgo, String baseUrl) {
         // 提取标题和链接
         Element titleElement = item.selectFirst("a");
         if (titleElement == null) {
@@ -578,7 +621,7 @@ public class CicpaCrawler {
         }
         
         // 构建完整URL
-        String url = buildFullUrl(relativeUrl);
+        String url = buildFullUrl(relativeUrl, baseUrl);
         
         // 提取日期
         LocalDateTime notificationTime = extractNotificationTime(item);
@@ -614,52 +657,5 @@ public class CicpaCrawler {
         notification.setMatchedKeywords(matchedKeywords);
         
         return notification;
-    }
-
-    /**
-     * 测试爬虫功能
-     */
-    public void testCrawler() {
-        logger.info("开始测试中注协爬虫...");
-        
-        try {
-            Document doc = fetchDocument(NEWS_BASE_PAGE_URL);
-            if (doc != null) {
-                logger.info("成功连接到中注协要闻页面");
-                logger.info("页面标题: {}", doc.title());
-                
-                // 测试解析通知
-                List<Notification> testNotifications = parseNotifications(
-                    doc, 1L, 1L, "通知,公告", LocalDateTime.now().minusMonths(1)
-                );
-                
-                logger.info("测试解析到 {} 条通知", testNotifications.size());
-                for (Notification notification : testNotifications) {
-                    logger.info("测试通知: {}", notification.getTitle());
-                }
-            } else {
-                logger.error("无法连接到中注协要闻页面");
-            }
-            
-            doc = fetchDocument(NOTICE_BASE_PAGE_URL);
-            if (doc != null) {
-                logger.info("成功连接到中注协通知公告页面");
-                logger.info("页面标题: {}", doc.title());
-                
-                // 测试解析通知
-                List<Notification> testNotifications = parseNotifications(
-                    doc, 1L, 1L, "通知,公告", LocalDateTime.now().minusMonths(1)
-                );
-                
-                logger.info("测试解析到 {} 条通知", testNotifications.size());
-                for (Notification notification : testNotifications) {
-                    logger.info("测试通知: {}", notification.getTitle());
-                }
-            } else {
-                logger.error("无法连接到中注协通知公告页面");
-            }
-        } catch (Exception e) {
-            logger.error("测试爬虫时发生错误", e);
-        }
     }
 }

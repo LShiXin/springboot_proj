@@ -21,7 +21,6 @@ import com.shixin.entity.ScheduleType;
 import com.shixin.entity.User;
 import com.shixin.service.MonitorTaskService;
 import com.shixin.service.BaseUrlsManagerService;
-import com.shixin.service.CacheService;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -34,9 +33,6 @@ public class MonitorTaskController {
 
     @Autowired
     private BaseUrlsManagerService baseUrlsManagerService;
-
-    @Autowired
-    private CacheService cacheService;
     
     // 获取当前用户的所有监控任务
     @PostMapping("/monitottask/getbyuser")
@@ -70,7 +66,9 @@ public class MonitorTaskController {
                     savedTask.isEnabled(), savedTask.getScheduleConfig().getStartTime(),
                     savedTask.getScheduleConfig().getTimePoint(),
                     savedTask.getScheduleConfig().getIntervalMillis()/60000, // 转换为分钟
-                    savedTask.getScheduleConfig().getEndTime());
+                    savedTask.getScheduleConfig().getEndTime(),
+                    savedTask.getScheduleConfig().getLastFireTime(), // 上次执行时间
+                    savedTask.getScheduleConfig().getNextFireTime()); // 下次执行时间
             return ResponseEntity.ok(ApiResponse.success(dto));
         }
     }
@@ -114,7 +112,9 @@ public class MonitorTaskController {
                     updatedTask.getKeywords(), updatedTask.isEnabled(), updatedTask.getScheduleConfig().getStartTime(),
                     updatedTask.getScheduleConfig().getTimePoint(),
                     updatedTask.getScheduleConfig().getIntervalMillis() / 60000,
-                    updatedTask.getScheduleConfig().getEndTime());
+                    updatedTask.getScheduleConfig().getEndTime(),
+                    updatedTask.getScheduleConfig().getLastFireTime(), // 上次执行时间
+                    updatedTask.getScheduleConfig().getNextFireTime()); // 下次执行时间
             return ResponseEntity.ok(ApiResponse.success(dto));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(400, e.getMessage()));
@@ -223,9 +223,6 @@ public class MonitorTaskController {
             // 保存监控链接
             MonitorUrl savedUrl = monitorTaskService.save_MonitorUrl(monitorUrl);
             System.out.println("保存成功: " + savedUrl);
-            
-            // 重新缓存用户的完整信息到Redis
-            cacheService.cacheUserAllInfoToRedis(user.getId());
             
             // 返回DTO
             MonitorUrlListDTO dto = new MonitorUrlListDTO(

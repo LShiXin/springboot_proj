@@ -21,13 +21,20 @@ public class MonitorTaskListDTO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime lastExecutionTime;  // 上次执行时间
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime nextExecutionTime;  // 下次执行时间
+
     // 无参构造（可选，用于框架）
     public MonitorTaskListDTO() {}
 
     // 全参构造（可选，用于手动构建）
     public MonitorTaskListDTO(Long id, String name, String keywords, boolean enabled,
                           LocalDateTime startTime, String timePoint,
-                          Long intervalMinutes, LocalDateTime endTime) {
+                          Long intervalMinutes, LocalDateTime endTime,
+                          LocalDateTime lastExecutionTime, LocalDateTime nextExecutionTime) {
         this.id = id;
         this.name = name;
         this.keywords = keywords;
@@ -36,6 +43,8 @@ public class MonitorTaskListDTO {
         this.timePoint = timePoint;
         this.intervalMinutes = intervalMinutes;
         this.endTime = endTime;
+        this.lastExecutionTime = lastExecutionTime;
+        this.nextExecutionTime = nextExecutionTime;
     }
 
     // Getter 和 Setter 方法
@@ -103,6 +112,22 @@ public class MonitorTaskListDTO {
         this.endTime = endTime;
     }
 
+    public LocalDateTime getLastExecutionTime() {
+        return lastExecutionTime;
+    }
+
+    public void setLastExecutionTime(LocalDateTime lastExecutionTime) {
+        this.lastExecutionTime = lastExecutionTime;
+    }
+
+    public LocalDateTime getNextExecutionTime() {
+        return nextExecutionTime;
+    }
+
+    public void setNextExecutionTime(LocalDateTime nextExecutionTime) {
+        this.nextExecutionTime = nextExecutionTime;
+    }
+
     @Override
     public String toString() {
         return "MonitorTaskListDTO{" +
@@ -114,6 +139,8 @@ public class MonitorTaskListDTO {
                 ", timePoint='" + timePoint + '\'' +
                 ", intervalMinutes=" + intervalMinutes +
                 ", endTime=" + endTime +
+                ", lastExecutionTime=" + lastExecutionTime +
+                ", nextExecutionTime=" + nextExecutionTime +
                 '}';
     }
 }
