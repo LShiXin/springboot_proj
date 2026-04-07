@@ -10,7 +10,8 @@ createApp({
 
                 { title: '首页', icon: 'icon-home', path: './index_pages/home/home.html' },
                 { title: '任务管理', icon: 'icon-user', path: './index_pages/monitor_manager/monitor_manager.html' },
-                { title: '订单管理', icon: 'icon-order', path: './index_pages/building/building.html' },
+                { title: '通知记录', icon: 'icon-history', path: './index_pages/notification_record/notification_record.html' },
+                { title: '执行记录', icon: 'icon-task', path: './index_pages/execution_record/execution_record.html' },
                 { title: '数据统计', icon: 'icon-chart', path: './index_pages/building/building.html' },
                 { title: '系统设置', icon: 'icon-setting', path: './index_pages/building/building.html' },
                 { title: '日志管理', icon: 'icon-log', path: './index_pages/building/building.html' },

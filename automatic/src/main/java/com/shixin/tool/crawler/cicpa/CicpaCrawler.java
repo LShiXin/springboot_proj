@@ -289,11 +289,8 @@ public class CicpaCrawler {
             return null;
         }
 
-        // 获取通知详情内容
-        String content = fetchNotificationContent(url);
-        if (content == null) {
-            content = title; // 如果无法获取详情，使用标题作为内容
-        }
+        // 只使用标题作为内容，不获取通知详情
+        String content = title;
 
         // 处理关键词高亮
         String processedContent = KeywordHighlighter.highlightKeywords(content, keywords);
@@ -518,8 +515,12 @@ public class CicpaCrawler {
      * @return 爬取到的通知数量
      */
     public int crawlNotificationsWithStrategy(Long userId, Long taskId, String keywords, boolean isNews) {
-        logger.info("开始按照策略爬取中注协{}，用户ID: {}, 任务ID: {}, 关键词: {}", 
-                   isNews ? "要闻" : "通知公告", userId, taskId, keywords);
+        return crawlNotificationsWithStrategy(userId, taskId, keywords, isNews, null);
+    }
+    
+    public int crawlNotificationsWithStrategy(Long userId, Long taskId, String keywords, boolean isNews, Long executionRecordId) {
+        logger.info("开始按照策略爬取中注协{}，用户ID: {}, 任务ID: {}, 关键词: {}, 执行记录ID: {}", 
+                   isNews ? "要闻" : "通知公告", userId, taskId, keywords, executionRecordId);
         
         int totalNotifications = 0;
         int page = 0; // 第一页是index.html，第二页是index_1.html
@@ -555,7 +556,8 @@ public class CicpaCrawler {
                     try {
                         // 解析单个通知项
                         Notification notification = parseNotificationItemWithStrategy(
-                            item, userId, taskId, keywords, oneMonthAgo, isNews ? NEWS_BASE_URL : NOTICE_BASE_URL
+                            item, userId, taskId, keywords, oneMonthAgo, 
+                            isNews ? NEWS_BASE_URL : NOTICE_BASE_URL, executionRecordId
                         );
                         
                         if (notification == null) {
@@ -607,6 +609,15 @@ public class CicpaCrawler {
      */
     private Notification parseNotificationItemWithStrategy(Element item, Long userId, Long taskId, 
                                                          String keywords, LocalDateTime oneMonthAgo, String baseUrl) {
+        return parseNotificationItemWithStrategy(item, userId, taskId, keywords, oneMonthAgo, baseUrl, null);
+    }
+    
+    /**
+     * 按照策略解析单个通知项（带基础URL和执行记录ID）
+     * 返回null表示通知时间超过一个月
+     */
+    private Notification parseNotificationItemWithStrategy(Element item, Long userId, Long taskId, 
+                                                         String keywords, LocalDateTime oneMonthAgo, String baseUrl, Long executionRecordId) {
         // 提取标题和链接
         Element titleElement = item.selectFirst("a");
         if (titleElement == null) {
@@ -640,11 +651,8 @@ public class CicpaCrawler {
             return null;
         }
         
-        // 获取通知详情内容
-        String content = fetchNotificationContent(url);
-        if (content == null) {
-            content = title; // 如果无法获取详情，使用标题作为内容
-        }
+        // 只使用标题作为内容，不获取通知详情
+        String content = title;
         
         // 处理关键词高亮
         String processedContent = KeywordHighlighter.highlightKeywords(content, keywords);
@@ -655,6 +663,11 @@ public class CicpaCrawler {
         notification.setOriginalContent(content);
         notification.setProcessedContent(processedContent);
         notification.setMatchedKeywords(matchedKeywords);
+        
+        // 设置执行记录ID
+        if (executionRecordId != null) {
+            notification.setExecutionRecordId(executionRecordId);
+        }
         
         return notification;
     }

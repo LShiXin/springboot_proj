@@ -148,30 +148,6 @@ public class CrawlerServiceImpl implements CrawlerService {
         }
     }
 
-    @Override
-    public boolean testCrawlerConnection(String url) {
-        logger.info("测试爬虫连接，URL: {}", url);
-        
-        try {
-            // 这里可以添加通用的连接测试逻辑
-            // 目前主要测试北注协网站
-            if (url.contains("bicpa.org.cn")) {
-                beizhuxieTrainingCrawler.testCrawler();
-                return true;
-            }
-            
-            return false;
-        } catch (Exception e) {
-            logger.error("测试爬虫连接时发生错误，URL: {}", url, e);
-            return false;
-        }
-    }
-
-    @Override
-    public void testBeizhuxieCrawler() {
-        logger.info("测试北注协培训通知爬虫");
-        beizhuxieTrainingCrawler.testCrawler();
-    }
 
     /**
      * 获取通知详情

@@ -23,7 +23,7 @@ public class UserController {
     // 刷新用户数据，用户在跳转到新页面后，会调用这个接口来获取最新的用户数据
     // 这个接口会从数据库或redis中查询用户数据，并返回给前端
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<Map<String, String>>> getCurrentUserInfo(HttpServletRequest request) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getCurrentUserInfo(HttpServletRequest request) {
 
         // JWT过滤器已经将用户信息存入请求属性中，这里直接获取即可
         User user=(User) request.getAttribute("userInfo");
@@ -32,7 +32,8 @@ public class UserController {
                     .body(ApiResponse.error(401, "用户未登录或Token无效"));
         }
         System.out.println("查询用户数据，用户ID：" + user.getId());
-        Map<String, String> userInfo = new HashMap<>();
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("id", user.getId());
         userInfo.put("username", user.getUsername());
         userInfo.put("email", user.getEmail());
         userInfo.put("phone", user.getPhone());

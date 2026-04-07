@@ -8,11 +8,13 @@ import com.shixin.entity.MonitorTask;
 import com.shixin.entity.MonitorTaskListDTO;
 import com.shixin.entity.MonitorUrl;
 import com.shixin.entity.MonitorUrlListDTO;
+import com.shixin.entity.Notification;
 import com.shixin.entity.ScheduleType;
 import com.shixin.entity.TaskScheduleConfig;
 import com.shixin.entity.UserAllInfoDTO;
 import com.shixin.repository.MonitorTaskRepository;
 import com.shixin.repository.MonitorUrlRepository;
+import com.shixin.repository.NotificationRepository;
 import com.shixin.service.MonitorTaskService;
 
 import jakarta.transaction.Transactional;
@@ -30,6 +32,9 @@ public class MonitorTaskServiceimpl implements MonitorTaskService {
 
     @Autowired
     private MonitorUrlRepository monitorUrlRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     // 获取所有监控任务
     @Override
@@ -232,16 +237,40 @@ public class MonitorTaskServiceimpl implements MonitorTaskService {
 
     }
 
-    // 删除定时任务
+    // 删除定时任务（连锁删除：删除任务、监控子链接和相关通知）
     @Override
     public Boolean deleteTaskById(Long taskId, Long userId) {
         try {
             MonitorTask entity = monitorTaskRepository.findById(taskId)
                     .orElseThrow(() -> new RuntimeException("该用户下未发现定时任务"));
+            
             if (entity != null && entity.getUser() != null && entity.getUser().getId().equals(userId)) {
+                // 1. 先删除该任务下的所有通知（连锁删除）
+                List<Notification> taskNotifications = notificationRepository.findByTaskId(taskId);
+                int deletedNotifications = 0;
+                for (Notification notification : taskNotifications) {
+                    notificationRepository.delete(notification);
+                    deletedNotifications++;
+                }
+                log.info("删除任务 {} 的相关通知，共删除 {} 条通知", taskId, deletedNotifications);
+                
+                // 2. 删除该任务下的所有监控子链接
+                List<MonitorUrl> taskUrls = monitorUrlRepository.findByTaskId(taskId);
+                int deletedUrls = 0;
+                for (MonitorUrl url : taskUrls) {
+                    monitorUrlRepository.delete(url);
+                    deletedUrls++;
+                }
+                log.info("删除任务 {} 的监控子链接，共删除 {} 条链接", taskId, deletedUrls);
+                
+                // 3. 最后删除定时任务本身
                 monitorTaskRepository.delete(entity);
+                
+                log.info("定时任务删除成功: taskId={}, userId={}, 删除通知={}条, 删除链接={}条", 
+                        taskId, userId, deletedNotifications, deletedUrls);
                 return true;
             } else {
+                log.warn("用户 {} 无权限删除任务 {} 或任务不存在", userId, taskId);
                 return false;
             }
         } catch (Exception e) {

@@ -403,7 +403,12 @@ public class BeizhuxieTrainingCrawler {
      * @return 爬取到的通知数量
      */
     public int crawlTrainingNotificationsWithStrategy(Long userId, Long taskId, String keywords) {
-        logger.info("开始按照策略爬取北注协培训通知，用户ID: {}, 任务ID: {}, 关键词: {}", userId, taskId, keywords);
+        return crawlTrainingNotificationsWithStrategy(userId, taskId, keywords, null);
+    }
+    
+    public int crawlTrainingNotificationsWithStrategy(Long userId, Long taskId, String keywords, Long executionRecordId) {
+        logger.info("开始按照策略爬取北注协培训通知，用户ID: {}, 任务ID: {}, 关键词: {}, 执行记录ID: {}", 
+                userId, taskId, keywords, executionRecordId);
         
         int totalNotifications = 0;
         int page = 1;
@@ -439,7 +444,7 @@ public class BeizhuxieTrainingCrawler {
                     try {
                         // 解析单个通知项
                         Notification notification = parseNotificationItemWithStrategy(
-                            item, userId, taskId, keywords, oneMonthAgo
+                            item, userId, taskId, keywords, oneMonthAgo, executionRecordId
                         );
                         
                         if (notification == null) {
@@ -490,6 +495,15 @@ public class BeizhuxieTrainingCrawler {
      */
     private Notification parseNotificationItemWithStrategy(Element item, Long userId, Long taskId, 
                                                          String keywords, LocalDateTime oneMonthAgo) {
+        return parseNotificationItemWithStrategy(item, userId, taskId, keywords, oneMonthAgo, null);
+    }
+    
+    /**
+     * 按照策略解析单个通知项（带执行记录ID）
+     * 返回null表示通知时间超过一个月
+     */
+    private Notification parseNotificationItemWithStrategy(Element item, Long userId, Long taskId, 
+                                                         String keywords, LocalDateTime oneMonthAgo, Long executionRecordId) {
         // 提取标题和链接
         Element titleElement = item.selectFirst("a");
         if (titleElement == null) {
@@ -538,6 +552,11 @@ public class BeizhuxieTrainingCrawler {
         notification.setOriginalContent(content);
         notification.setProcessedContent(processedContent);
         notification.setMatchedKeywords(matchedKeywords);
+        
+        // 设置执行记录ID
+        if (executionRecordId != null) {
+            notification.setExecutionRecordId(executionRecordId);
+        }
         
         return notification;
     }

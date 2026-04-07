@@ -86,16 +86,4 @@ public interface CrawlerService {
      */
     int deleteTaskNotifications(Long taskId);
 
-    /**
-     * 测试爬虫连接
-     * 
-     * @param url 测试的URL
-     * @return 是否连接成功
-     */
-    boolean testCrawlerConnection(String url);
-
-    /**
-     * 测试北注协培训通知爬虫
-     */
-    void testBeizhuxieCrawler();
 }

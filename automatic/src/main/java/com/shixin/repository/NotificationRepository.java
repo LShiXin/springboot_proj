@@ -64,4 +64,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
      */
     @Query("SELECT n FROM Notification n WHERE n.userId = :userId ORDER BY n.notificationTime DESC")
     List<Notification> findRecentNotifications(@Param("userId") Long userId, org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * 统计任务的通知数量
+     */
+    long countByTaskId(Long taskId);
 }

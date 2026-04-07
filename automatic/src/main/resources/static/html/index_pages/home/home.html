@@ -1,72 +1,90 @@
-<div class="page-card">
-    <div class="page-title">数据概览</div>
+<div id="homeApp" class="page-card mt-20">
+    <div class="page-title">
+        用户定时任务统计
+        <div class="filter-controls" style="float:right;margin-top:-4px;">
+            <button 
+                class="logout-btn" 
+                @click="refreshData" 
+                :disabled="isRefreshing || isLoading"
+                style="margin-right:10px;"
+            >
+                <span v-if="isRefreshing">刷新中...</span>
+                <span v-else>刷新</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- 加载状态 -->
+    <div v-if="isLoading" class="loading">加载中...</div>
+    
+    <!-- 错误信息 -->
+    <div v-if="errorMessage" class="error-message" style="background:#f44336;color:white;padding:10px;border-radius:5px;margin-bottom:15px;">
+        {{ errorMessage }}
+    </div>
+    
+    <!-- 统计数据网格 -->
     <div class="stats-grid">
         <div class="stat-item">
-            <div class="stat-icon"><i class="iconpark icon-user"></i></div>
+            <div class="stat-icon"><i class="iconpark icon-user-task"></i></div>
             <div class="stat-info">
-                <div class="stat-value">1,258</div>
-                <div class="stat-label">总用户数</div>
+                <div class="stat-value">{{ formattedUserTaskCount }}</div>
+                <div class="stat-label">用户任务数量</div>
             </div>
         </div>
         <div class="stat-item">
-            <div class="stat-icon"><i class="iconpark icon-order"></i></div>
+            <div class="stat-icon"><i class="iconpark icon-user-execution"></i></div>
             <div class="stat-info">
-                <div class="stat-value">368</div>
-                <div class="stat-label">今日订单</div>
+                <div class="stat-value">{{ formattedUserTaskExecutions }}</div>
+                <div class="stat-label">用户任务执行次数</div>
             </div>
         </div>
         <div class="stat-item">
-            <div class="stat-icon"><i class="iconpark icon-money"></i></div>
+            <div class="stat-icon"><i class="iconpark icon-user-success"></i></div>
             <div class="stat-info">
-                <div class="stat-value">¥18,650</div>
-                <div class="stat-label">今日营收</div>
+                <div class="stat-value">{{ formattedUserSuccessRate }}</div>
+                <div class="stat-label">用户任务成功率</div>
             </div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-icon"><i class="iconpark icon-user-notification"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ formattedUserTotalNotifications }}</div>
+                <div class="stat-label">用户总通知</div>
+            </div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-icon"><i class="iconpark icon-today-new"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ formattedTodayNewNotifications }}</div>
+                <div class="stat-label">今日新通知</div>
+            </div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-icon"><i class="iconpark icon-user-recent"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ formattedUserRecentExecutions }}</div>
+                <div class="stat-label">用户24小时执行</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 详细统计数据 -->
+    <div class="mt-15">
+        <div class="stat-detail">
+            <span class="stat-detail-label">用户成功执行:</span>
+            <span class="stat-detail-value">{{ formattedUserSuccessExecutions }}</span>
+        </div>
+        <div class="stat-detail">
+            <span class="stat-detail-label">用户失败执行:</span>
+            <span class="stat-detail-value">{{ formattedUserFailedExecutions }}</span>
+        </div>
+        <div class="stat-detail">
+            <span class="stat-detail-label">用户新通知总数:</span>
+            <span class="stat-detail-value">{{ formattedUserTotalNewNotifications }}</span>
         </div>
     </div>
 </div>
 
-<div class="page-card mt-20">
-    <div class="page-title">最近操作</div>
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>操作时间</th>
-                <th>操作类型</th>
-                <th>操作内容</th>
-                <th>状态</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>2026-02-27 10:25:30</td>
-                <td>登录</td>
-                <td>用户 admin 登录系统</td>
-                <td><span class="status success">成功</span></td>
-            </tr>
-            <tr>
-                <td>2026-02-27 09:18:45</td>
-                <td>数据导出</td>
-                <td>导出用户列表数据</td>
-                <td><span class="status success">成功</span></td>
-            </tr>
-            <tr>
-                <td>2026-02-26 18:05:12</td>
-                <td>修改密码</td>
-                <td>用户 admin 修改密码</td>
-                <td><span class="status success">成功</span></td>
-            </tr>
-            <tr>
-                <td>2026-02-26 14:30:28</td>
-                <td>新增用户</td>
-                <td>新增用户 test01</td>
-                <td><span class="status error">失败</span></td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-
+<link rel="stylesheet" href="/html/index_pages/home/home.css">
 <!-- 子页面可添加独立脚本 -->
-<script>
-    console.log('首页页面加载完成');
-    // 可编写首页专属交互逻辑
-</script>
+<script src="/html/index_pages/home/home.js"></script>

@@ -1,0 +1,93 @@
+<div id="notificationRecordApp" class="page-card">
+    <div class="page-title">通知记录
+        <div class="filter-controls" style="float:right;margin-top:-4px;">
+            <select v-model="filterReadStatus" class="filter-select" style="margin-right:10px;">
+                <option value="">全部状态</option>
+                <option value="unread">未读</option>
+                <option value="read">已读</option>
+            </select>
+            <input v-model="filterTaskName" type="text" placeholder="任务名称" class="filter-input" style="margin-right:10px;">
+            <input v-model="filterDateRange" type="date" class="filter-input" style="margin-right:10px;">
+            <button class="logout-btn" @click="refreshData">刷新</button>
+            <button class="logout-btn mark-all-read-btn" @click="markAllAsRead" :disabled="markingAllAsRead">
+                {{ markingAllAsRead ? '标记中...' : '全部标记已读' }}
+            </button>
+        </div>
+    </div>
+    <div v-if="isLoading" class="loading">加载中...</div>
+    <table v-else class="data-table notification-table">
+        <thead v-cloak>
+            <tr>
+                <th>处理后的内容</th>
+                <th>所属定时任务</th>
+                <th>加载时间</th>
+                <th>通知发布时间</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <template v-for="notification in filteredNotifications" :key="notification.id">
+                <tr 
+                    :class="{'unread-row': !notification.read, 'read-row': notification.read}"
+                    @mouseover="showTooltip(notification)"
+                    @mouseleave="hideTooltip"
+                    @dblclick="openNotificationUrl(notification)"
+                    @click="markAsRead(notification)"
+                    :title="'双击打开链接: ' + notification.url"
+                >
+                    <td class="content-cell">
+                        <div class="processed-content" v-html="notification.processedContent || notification.originalContent || '无内容'"></div>
+                    </td>
+                    <td>{{ notification.taskName || '未知任务' }}</td>
+                    <td>{{ formatDateTime(notification.createdAt) }}</td>
+                    <td>{{ formatDateTime(notification.notificationTime) }}</td>
+                    <td>
+                        <span class="read-status" :class="{'unread': !notification.read, 'read': notification.read}">
+                            {{ notification.read ? '已读' : '未读' }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="notification-actions">
+                            <button class="logout-btn small-btn" @click.stop="openNotificationUrl(notification)">打开</button>
+                            <button class="logout-btn small-btn" @click.stop="copyUrl(notification)">复制链接</button>
+                            <button class="delete-btn small-btn" @click.stop="deleteNotification(notification)">删除</button>
+                        </div>
+                    </td>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+    
+    <!-- 分页控件 -->
+    <div v-if="!isLoading && notifications.length > 0" class="pagination">
+        <button class="pagination-btn" :disabled="currentPage === 1" @click="prevPage">上一页</button>
+        <span class="pagination-info">第 {{ currentPage }} 页 / 共 {{ totalPages }} 页 ({{ totalRecords }} 条记录)</span>
+        <button class="pagination-btn" :disabled="currentPage === totalPages" @click="nextPage">下一页</button>
+        <select v-model="pageSize" class="page-size-select" @change="changePageSize">
+            <option value="10">10条/页</option>
+            <option value="20">20条/页</option>
+            <option value="50">50条/页</option>
+            <option value="100">100条/页</option>
+        </select>
+    </div>
+    
+    <!-- 空状态提示 -->
+    <div v-if="!isLoading && notifications.length === 0" class="empty-state">
+        <div class="empty-icon">📭</div>
+        <h3>暂无通知记录</h3>
+        <p>当前没有通知记录，请等待任务执行或手动触发任务</p>
+    </div>
+
+    <!-- 工具提示 -->
+    <div v-if="showUrlTooltip" class="url-tooltip" :style="tooltipStyle">
+        <div class="tooltip-content">
+            <strong>通知链接:</strong>
+            <div class="tooltip-url">{{ currentTooltipUrl }}</div>
+            <small>双击行可打开链接</small>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="/html/index_pages/notification_record/notification_record.css" />
+<script src="/html/index_pages/notification_record/notification_record.js"></script>

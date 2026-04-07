@@ -2,7 +2,10 @@ package com.shixin.serviceimpl;
 
 import com.shixin.entity.MonitorTask;
 import com.shixin.entity.MonitorUrl;
+import com.shixin.entity.TaskExecutionRecord;
 import com.shixin.entity.TaskScheduleConfig;
+import com.shixin.repository.NotificationRepository;
+import com.shixin.repository.TaskExecutionRecordRepository;
 import com.shixin.repository.TaskScheduleConfigRepository;
 import com.shixin.tool.crawler.beizhuxie.BeizhuxieTrainingCrawler;
 import com.shixin.tool.crawler.cicpa.CicpaCrawler;
@@ -26,6 +29,12 @@ public class ScheduledTaskExecutor {
 
     @Autowired
     private TaskScheduleConfigRepository taskScheduleConfigRepository;
+
+    @Autowired
+    private TaskExecutionRecordRepository taskExecutionRecordRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     @Autowired
     private BeizhuxieTrainingCrawler beizhuxieTrainingCrawler;
@@ -108,31 +117,67 @@ public class ScheduledTaskExecutor {
             return false;
         }
 
-        // 4. 执行真正的业务逻辑（爬虫）
+        // 记录执行开始时间
+        long startTime = System.currentTimeMillis();
+        TaskExecutionRecord executionRecord = new TaskExecutionRecord();
+        executionRecord.setTaskId(dbConfig.getId());
+        executionRecord.setExecutionTime(scanTime);
+        // 设置初始状态为FAILED（避免null约束违反），执行成功后会更新为SUCCESS
+        executionRecord.setStatus(TaskExecutionRecord.ExecutionStatus.FAILED);
+        
+        // 先保存执行记录以获取ID
+        taskExecutionRecordRepository.save(executionRecord);
+        Long executionRecordId = executionRecord.getId();
+        
         try {
-            executeTask(dbConfig);
+            // 在执行前查询当前任务的通知数量
+            Long taskId = dbConfig.getId();
+            long beforeCount = notificationRepository.countByTaskId(taskId);
+            
+            // 4. 执行真正的业务逻辑（爬虫），传递执行记录ID
+            int notificationCount = executeTask(dbConfig, executionRecordId);
+            
+            // 在执行后查询当前任务的通知数量，计算新通知数量
+            long afterCount = notificationRepository.countByTaskId(taskId);
+            int newNotificationCount = (int) (afterCount - beforeCount);
+            
+            // 执行成功，记录成功结果
+            executionRecord.setStatus(TaskExecutionRecord.ExecutionStatus.SUCCESS);
+            executionRecord.setNotificationCount(notificationCount);
+            executionRecord.setNewNotificationCount(newNotificationCount);
+            executionRecord.setResultMessage(String.format("任务执行成功，抓取到 %d 条通知，其中 %d 条是新通知", 
+                    notificationCount, newNotificationCount));
+            executionRecord.setExecutionDuration(System.currentTimeMillis() - startTime);
+            
+            // 5. 更新上次执行时间和下次执行时间
+            dbConfig.setLastFireTime(scanTime);
+            LocalDateTime nextTime = computeNextFireTime(dbConfig, scanTime);
+            dbConfig.setNextFireTime(nextTime);
+
+            // 6. 保存任务配置和更新执行记录
+            taskScheduleConfigRepository.save(dbConfig);
+            taskExecutionRecordRepository.save(executionRecord);
+            
+            log.info("任务 {} 执行成功，抓取 {} 条通知，其中 {} 条是新通知，下次执行时间: {}", 
+                    config.getId(), notificationCount, newNotificationCount, nextTime);
+            return true;
+            
         } catch (Exception e) {
-            log.error("执行任务 {} 业务逻辑失败，状态将不回滚，保留原下次执行时间以便重试", config.getId(), e);
-            // 注意：这里不抛出异常，让事务提交，但不会更新 lastFireTime 和 nextFireTime。
-            // 如果想要失败后推迟重试，可以在这里修改 nextFireTime 为当前时间+5分钟，但简单起见先保持原样。
-            // 由于没有修改任何实体字段，事务提交后数据库不变，下次扫描会再次尝试。
-            return true; // 乐观锁已更新版本号？不，我们没调用 save，所以版本号未变。需要明确：失败时不更新任何字段。
-            // 更好的做法：记录失败次数，达到阈值后禁用任务。这里简单处理：不更新 nextFireTime，让下次扫描继续尝试。
-            // 但为了不占用乐观锁版本号，我们直接 return true 但未修改数据？不对，事务内未修改数据，提交无影响。
-            // 所以需要单独处理：失败时不调用 save，直接 return true 表示“本次乐观锁已消费，但不推进时间”。
-            // 但这样版本号不会增加，其他实例可能再次尝试？为了避免无限重试，可以增加一个重试计数器字段。
-            // 为简化，下面提供两种方案，见注释。
+            // 执行失败，记录失败结果
+            log.error("执行任务 {} 业务逻辑失败", config.getId(), e);
+            
+            executionRecord.setStatus(TaskExecutionRecord.ExecutionStatus.FAILED);
+            executionRecord.setErrorMessage(e.getMessage());
+            executionRecord.setResultMessage("任务执行失败: " + e.getMessage());
+            executionRecord.setExecutionDuration(System.currentTimeMillis() - startTime);
+            
+            // 保存执行记录（失败记录）
+            taskExecutionRecordRepository.save(executionRecord);
+            
+            // 注意：这里不更新任务配置的lastFireTime和nextFireTime，让下次扫描继续尝试
+            // 但为了不占用乐观锁版本号，我们直接返回true表示"本次乐观锁已消费，但不推进时间"
+            return true;
         }
-
-        // 5. 更新上次执行时间和下次执行时间
-        dbConfig.setLastFireTime(scanTime);
-        LocalDateTime nextTime = computeNextFireTime(dbConfig, scanTime);
-        dbConfig.setNextFireTime(nextTime);
-
-        // 6. 保存（JPA 会自动增加版本号）
-        taskScheduleConfigRepository.save(dbConfig);
-        log.info("任务 {} 执行成功，下次执行时间: {}", config.getId(), nextTime);
-        return true;
     }
 
     /**
@@ -173,9 +218,16 @@ public class ScheduledTaskExecutor {
     }
 
     /**
-     * 执行实际业务（爬虫），异常会向上抛出
+     * 执行实际业务（爬虫），返回抓取到的通知总数
      */
-    private void executeTask(TaskScheduleConfig config) throws Exception {
+    private int executeTask(TaskScheduleConfig config) throws Exception {
+        return executeTask(config, null);
+    }
+
+    /**
+     * 执行实际业务（爬虫），返回抓取到的通知总数（带执行记录ID）
+     */
+    private int executeTask(TaskScheduleConfig config, Long executionRecordId) throws Exception {
         MonitorTask monitorTask = config.getMonitorTask();
         if (monitorTask == null) {
             throw new IllegalStateException("任务配置未关联监控任务");
@@ -185,22 +237,32 @@ public class ScheduledTaskExecutor {
         List<MonitorUrl> urls = monitorTask.getUrls();
         if (urls == null || urls.isEmpty()) {
             log.warn("监控任务 {} 没有配置链接", monitorTask.getId());
-            return;
+            return 0;
         }
 
+        int totalCount = 0;
         for (MonitorUrl url : urls) {
             if (!url.isEnabled()) {
                 log.debug("链接 {} 已禁用，跳过", url.getId());
                 continue;
             }
-            executeCrawlerForUrl(url, monitorTask);
+            totalCount += executeCrawlerForUrl(url, monitorTask, executionRecordId);
         }
+        
+        return totalCount;
     }
 
     /**
-     * 执行爬虫（异常向上抛出）
+     * 执行爬虫（异常向上抛出），返回抓取到的通知数量
      */
-    private void executeCrawlerForUrl(MonitorUrl url, MonitorTask monitorTask) throws Exception {
+    private int executeCrawlerForUrl(MonitorUrl url, MonitorTask monitorTask) throws Exception {
+        return executeCrawlerForUrl(url, monitorTask, null);
+    }
+
+    /**
+     * 执行爬虫（异常向上抛出），返回抓取到的通知数量（带执行记录ID）
+     */
+    private int executeCrawlerForUrl(MonitorUrl url, MonitorTask monitorTask, Long executionRecordId) throws Exception {
         String urlStr = url.getUrl().toLowerCase();
         String keywords = monitorTask.getKeywords();
         if (keywords == null) keywords = "";
@@ -210,9 +272,11 @@ public class ScheduledTaskExecutor {
             int count = beizhuxieTrainingCrawler.crawlTrainingNotificationsWithStrategy(
                     monitorTask.getUser().getId(),
                     monitorTask.getId(),
-                    keywords
+                    keywords,
+                    executionRecordId
             );
             log.info("北注协爬虫完成，爬取 {} 条", count);
+            return count;
         } else if (urlStr.contains("cicpa.org.cn")) {
             log.info("使用中注协爬虫处理: {}", url.getUrl());
             boolean isNews = urlStr.contains("/news/");
@@ -220,11 +284,14 @@ public class ScheduledTaskExecutor {
                     monitorTask.getUser().getId(),
                     monitorTask.getId(),
                     keywords,
-                    isNews
+                    isNews,
+                    executionRecordId
             );
             log.info("中注协爬虫完成，爬取 {} 条", count);
+            return count;
         } else {
             log.warn("未找到匹配的爬虫，链接: {}", url.getUrl());
+            return 0;
         }
     }
 }

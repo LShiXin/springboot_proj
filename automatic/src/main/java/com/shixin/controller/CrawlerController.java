@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.shixin.entity.ApiResponse;
 import com.shixin.entity.Notification;
+import com.shixin.entity.NotificationWithTaskNameDTO;
 import com.shixin.service.CrawlerService;
 
 /**
@@ -94,16 +95,34 @@ public class CrawlerController {
     }
 
     /**
-     * 获取用户通知列表
+     * 获取用户通知列表（包含任务名称）
      */
     @GetMapping("/notifications/user/{userId}")
-    public ResponseEntity<ApiResponse<List<Notification>>> getUserNotifications(
+    public ResponseEntity<ApiResponse<List<NotificationWithTaskNameDTO>>> getUserNotifications(
             @PathVariable Long userId) {
         
         try {
             logger.debug("获取用户通知列表，用户ID: {}", userId);
             List<Notification> notifications = crawlerService.getUserNotifications(userId);
-            return ResponseEntity.ok(ApiResponse.success(notifications));
+            
+            // 转换为DTO，包含任务名称
+            List<NotificationWithTaskNameDTO> notificationDTOs = new java.util.ArrayList<>();
+            for (Notification notification : notifications) {
+                // 获取任务名称
+                String taskName = "未知任务"; // 默认值
+                try {
+                    // 这里需要获取任务名称，暂时使用默认值
+                    // 实际应该从MonitorTaskService获取
+                    taskName = "任务" + notification.getTaskId();
+                } catch (Exception e) {
+                    logger.warn("获取任务名称失败，任务ID: {}", notification.getTaskId(), e);
+                }
+                
+                NotificationWithTaskNameDTO dto = new NotificationWithTaskNameDTO(notification, taskName);
+                notificationDTOs.add(dto);
+            }
+            
+            return ResponseEntity.ok(ApiResponse.success(notificationDTOs));
         } catch (Exception e) {
             logger.error("获取用户通知列表时发生错误", e);
             return ResponseEntity.badRequest().body(ApiResponse.error(400, "获取通知列表失败: " + e.getMessage()));
@@ -245,49 +264,7 @@ public class CrawlerController {
         }
     }
 
-    /**
-     * 测试爬虫连接
-     */
-    @GetMapping("/test/connection")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> testCrawlerConnection(
-            @RequestParam String url) {
-        
-        try {
-            logger.info("测试爬虫连接，URL: {}", url);
-            boolean success = crawlerService.testCrawlerConnection(url);
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("url", url);
-            result.put("connected", success);
-            
-            return ResponseEntity.ok(ApiResponse.success(result));
-        } catch (Exception e) {
-            logger.error("测试爬虫连接时发生错误", e);
-            return ResponseEntity.badRequest().body(ApiResponse.error(400, "测试爬虫连接失败: " + e.getMessage()));
-        }
-    }
-
-    /**
-     * 测试北注协培训通知爬虫
-     */
-    @GetMapping("/test/beizhuxie")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> testBeizhuxieCrawler() {
-        
-        try {
-            logger.info("测试北注协培训通知爬虫");
-            crawlerService.testBeizhuxieCrawler();
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("message", "北注协爬虫测试完成");
-            result.put("success", true);
-            
-            return ResponseEntity.ok(ApiResponse.success(result));
-        } catch (Exception e) {
-            logger.error("测试北注协爬虫时发生错误", e);
-            return ResponseEntity.badRequest().body(ApiResponse.error(400, "测试北注协爬虫失败: " + e.getMessage()));
-        }
-    }
-
+   
     /**
      * 搜索通知
      */

@@ -87,6 +87,13 @@ public class Notification {
     @Column(name = "is_read", nullable = false)
     private boolean read = false;
 
+    /**
+     * 任务执行记录ID（关联到TaskExecutionRecord）
+     * 表明这个通知是哪一次执行任务添加的
+     */
+    @Column(name = "execution_record_id")
+    private Long executionRecordId;
+
     // 无参构造
     public Notification() {}
 
@@ -97,6 +104,16 @@ public class Notification {
         this.title = title;
         this.url = url;
         this.notificationTime = notificationTime;
+    }
+
+    // 带执行记录ID的构造
+    public Notification(Long userId, Long taskId, String title, String url, LocalDateTime notificationTime, Long executionRecordId) {
+        this.userId = userId;
+        this.taskId = taskId;
+        this.title = title;
+        this.url = url;
+        this.notificationTime = notificationTime;
+        this.executionRecordId = executionRecordId;
     }
 
     @PrePersist
@@ -193,6 +210,14 @@ public class Notification {
         this.read = read;
     }
 
+    public Long getExecutionRecordId() {
+        return executionRecordId;
+    }
+
+    public void setExecutionRecordId(Long executionRecordId) {
+        this.executionRecordId = executionRecordId;
+    }
+
     @Override
     public String toString() {
         return "Notification{" +
@@ -205,6 +230,7 @@ public class Notification {
                 ", matchedKeywords='" + matchedKeywords + '\'' +
                 ", createdAt=" + createdAt +
                 ", read=" + read +
+                ", executionRecordId=" + executionRecordId +
                 '}';
     }
 }

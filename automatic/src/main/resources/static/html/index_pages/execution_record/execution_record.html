@@ -1,0 +1,155 @@
+<div id="executionRecordApp" class="page-card">
+    <div class="page-title">执行记录
+        <div class="filter-controls" style="float:right;margin-top:-4px;">
+            <select v-model="filterStatus" class="filter-select" style="margin-right:10px;">
+                <option value="">全部状态</option>
+                <option value="SUCCESS">成功</option>
+                <option value="FAILED">失败</option>
+                <option value="RUNNING">运行中</option>
+                <option value="CANCELLED">已取消</option>
+            </select>
+            <input v-model="filterTaskName" type="text" placeholder="任务名称" class="filter-input" style="margin-right:10px;">
+            <input v-model="filterDateRange" type="date" class="filter-input" style="margin-right:10px;">
+            <button class="logout-btn" @click="refreshData">刷新</button>
+        </div>
+    </div>
+    <div v-if="isLoading" class="loading">加载中...</div>
+    <table v-else class="data-table">
+        <thead v-cloak>
+            <tr>
+                <th>任务名称</th>
+                <th>执行时间</th>
+                <th>结束时间</th>
+                <th>持续时间</th>
+                <th>状态</th>
+                <th>执行结果</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <template v-for="record in filteredRecords" :key="record.id">
+                <tr>
+                    <td>{{ record.taskName }}</td>
+                    <td>{{ formatDateTime(record.startTime) }}</td>
+                    <td>{{ formatDateTime(record.endTime) }}</td>
+                    <td>{{ formatDuration(record.duration) }}</td>
+                    <td>
+                        <span class="status" :class="getStatusClass(record.status)">
+                            {{ getStatusText(record.status) }}
+                        </span>
+                    </td>
+                    <td>
+                        <span v-if="record.result" class="result-text" :title="record.result">
+                            {{ truncateText(record.result, 50) }}
+                        </span>
+                        <span v-else class="result-empty">-</span>
+                    </td>
+                    <td>
+                        <div class="record-actions">
+                            <button class="logout-btn" @click.stop="viewDetails(record)">详情</button>
+                            <button v-if="record.status === 'RUNNING'" class="logout-btn cancel-btn" 
+                                    @click.stop="cancelExecution(record)" :disabled="cancellingId === record.id">
+                                {{ cancellingId === record.id ? '取消中...' : '取消' }}
+                            </button>
+                            <button v-if="record.status === 'FAILED'" class="logout-btn retry-btn" 
+                                    @click.stop="retryExecution(record)" :disabled="retryingId === record.id">
+                                {{ retryingId === record.id ? '重试中...' : '重试' }}
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <!-- 详情展开行 -->
+                <tr v-if="expandedRecordId === record.id">
+                    <td colspan="7" style="padding: 0; border-top: none;">
+                        <div class="detail-container">
+                            <div class="detail-section">
+                                <h4>执行详情</h4>
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <span class="detail-label">任务ID：</span>
+                                        <span class="detail-value">{{ record.taskId }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">执行器：</span>
+                                        <span class="detail-value">{{ record.executor || '系统' }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">触发方式：</span>
+                                        <span class="detail-value">{{ record.triggerType || '定时' }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <span class="detail-label">重试次数：</span>
+                                        <span class="detail-value">{{ record.retryCount || 0 }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="detail-section" v-if="record.errorMessage">
+                                <h4>错误信息</h4>
+                                <div class="error-message">
+                                    <pre>{{ record.errorMessage }}</pre>
+                                </div>
+                            </div>
+                            <div class="detail-section" v-if="record.logs && record.logs.length > 0">
+                                <h4>执行日志</h4>
+                                <div class="log-container">
+                                    <div v-for="(log, index) in record.logs" :key="index" class="log-item">
+                                        <span class="log-time">{{ formatTime(log.timestamp) }}</span>
+                                        <span class="log-level" :class="'level-' + log.level.toLowerCase()">{{ log.level }}</span>
+                                        <span class="log-message">{{ log.message }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="detail-section" v-if="record.resultData">
+                                <h4>执行结果数据</h4>
+                                <div class="result-data">
+                                    <pre>{{ JSON.stringify(record.resultData, null, 2) }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </template>
+        </tbody>
+    </table>
+    
+    <!-- 分页控件 -->
+    <div v-if="!isLoading && records.length > 0" class="pagination">
+        <button class="pagination-btn" :disabled="currentPage === 1" @click="prevPage">上一页</button>
+        <span class="pagination-info">第 {{ currentPage }} 页 / 共 {{ totalPages }} 页 ({{ totalRecords }} 条记录)</span>
+        <button class="pagination-btn" :disabled="currentPage === totalPages" @click="nextPage">下一页</button>
+        <select v-model="pageSize" class="page-size-select" @change="changePageSize">
+            <option value="10">10条/页</option>
+            <option value="20">20条/页</option>
+            <option value="50">50条/页</option>
+            <option value="100">100条/页</option>
+        </select>
+    </div>
+    
+    <!-- 空状态提示 -->
+    <div v-if="!isLoading && records.length === 0" class="empty-state">
+        <div class="empty-icon">📊</div>
+        <h3>暂无执行记录</h3>
+        <p>当前没有任务的执行记录，请等待任务执行或手动触发任务</p>
+    </div>
+
+    <!-- 详情弹窗 -->
+    <div v-if="showDetailModal" class="modal-overlay" @click.self="closeDetailModal" v-cloak>
+        <div class="modal-content large-modal">
+            <div class="modal-header">
+                <h3>执行记录详情 - {{ selectedRecord.taskName }}</h3>
+                <button class="modal-close-btn" @click="closeDetailModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-modal-content">
+                    <!-- 详情内容与展开行相同 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="logout-btn" @click="closeDetailModal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="/html/index_pages/execution_record/execution_record.css" />
+<script src="/html/index_pages/execution_record/execution_record.js"></script>
