@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 构建请求数据
         const registerData = JSON.stringify({ username, password });
-        const apiPath = "http://localhost:8080/api/register";
+        const apiPath = "/api/register";
 
         // 发送注册请求
         fetch(apiPath, {
@@ -45,12 +45,13 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             console.log('注册响应数据:', data);
-            if (data.success) {
+            if (data.code === 200 && data.data === "注册成功") {
                 // 注册成功
-                showMessage('注册成功！', 'success');
-                localStorage.setItem('token', data.token);
-                // 可选：注册成功后跳转到登录页/主页
-                // window.location.href = './login.html';
+                showMessage('注册成功！3秒后跳转到登录页面...', 'success');
+                // 3秒后跳转到登录页面
+                setTimeout(() => {
+                    window.location.href = './login.html';
+                }, 3000);
             } else {
                 // 注册失败
                 showMessage('注册失败：' + (data.message || '未知错误'), 'error');

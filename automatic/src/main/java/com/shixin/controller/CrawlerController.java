@@ -19,9 +19,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.shixin.entity.ApiResponse;
+import com.shixin.entity.MonitorTask;
 import com.shixin.entity.Notification;
 import com.shixin.entity.NotificationWithTaskNameDTO;
 import com.shixin.service.CrawlerService;
+import com.shixin.service.MonitorTaskService;
 
 /**
  * 爬虫控制器
@@ -34,6 +36,9 @@ public class CrawlerController {
 
     @Autowired
     private CrawlerService crawlerService;
+
+    @Autowired
+    private MonitorTaskService monitorTaskService;
 
     /**
      * 执行爬虫任务
@@ -111,11 +116,17 @@ public class CrawlerController {
                 // 获取任务名称
                 String taskName = "未知任务"; // 默认值
                 try {
-                    // 这里需要获取任务名称，暂时使用默认值
-                    // 实际应该从MonitorTaskService获取
-                    taskName = "任务" + notification.getTaskId();
+                    // 从MonitorTaskService获取任务名称
+                    MonitorTask task = monitorTaskService.getTaskById(notification.getTaskId());
+                    if (task != null) {
+                        taskName = task.getName();
+                    } else {
+                        taskName = "任务" + notification.getTaskId() + "(已删除)";
+                        logger.warn("任务不存在，任务ID: {}", notification.getTaskId());
+                    }
                 } catch (Exception e) {
                     logger.warn("获取任务名称失败，任务ID: {}", notification.getTaskId(), e);
+                    taskName = "任务" + notification.getTaskId() + "(获取失败)";
                 }
                 
                 NotificationWithTaskNameDTO dto = new NotificationWithTaskNameDTO(notification, taskName);
@@ -276,16 +287,7 @@ public class CrawlerController {
         try {
             logger.debug("搜索通知，用户ID: {}, 关键词: {}", userId, keyword);
             
-            List<Notification> notifications;
-            if (keyword == null || keyword.trim().isEmpty()) {
-                notifications = crawlerService.getUserNotifications(userId);
-            } else {
-                notifications = crawlerService.getUserNotifications(userId).stream()
-                        .filter(notification -> 
-                            notification.getTitle().contains(keyword) || 
-                            (notification.getOriginalContent() != null && notification.getOriginalContent().contains(keyword)))
-                        .toList();
-            }
+            List<Notification> notifications = crawlerService.searchNotifications(userId, keyword);
             
             return ResponseEntity.ok(ApiResponse.success(notifications));
         } catch (Exception e) {

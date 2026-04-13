@@ -188,6 +188,7 @@ Vue.createApp({
                     });
                     
                     console.log(`成功加载 ${this.notifications.length} 条通知记录`);
+                    // console.log(this.notifications);
                 } else {
                     throw new Error(result.message || '获取通知记录失败');
                 }

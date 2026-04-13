@@ -1,4 +1,4 @@
-<div id="monitorManagerApp" class="page-card">
+    <div id="monitorManagerApp" class="page-card">
     <div class="page-title">任务列表
         <button class="logout-btn" style="float:right;margin-top:-4px;" @click="handleAddTask">添加任务</button>
     </div>
@@ -53,43 +53,50 @@
             </tr>
             <!-- 任务列表 -->
             <template v-for="task in tasks" :key="task.id">
-                <tr @click="handleToggleLinks(task.id)" style="cursor:pointer;">
-                    <td>
+                <tr @click="handleToggleLinks(task.id)" style="cursor:pointer;" v-cloak
+                   class="task-row">
+                    <td @mouseenter="handleMouseEnter(task.id, 0, $event)" 
+                        @mouseleave="handleMouseLeave()">
                         <template v-if="editingTaskId === task.id">
                             <input v-model="editingTask.name" class="task-input"
                                 style="width:100%;min-width:80px;max-width:180px;" />
                         </template>
                         <template v-else>{{ task.name }}</template>
                     </td>
-                    <td>
+                    <td @mouseenter="handleMouseEnter(task.id, 1, $event)" 
+                        @mouseleave="handleMouseLeave()">
                         <template v-if="editingTaskId === task.id">
                             <input v-model="editingTask.keywords" class="task-input"
                                 style="width:100%;min-width:80px;max-width:180px;" />
                         </template>
                         <template v-else>{{ task.keywords }}</template>
                     </td>
-                    <td>
+                    <td @mouseenter="handleMouseEnter(task.id, 2, $event)" 
+                        @mouseleave="handleMouseLeave()">
                         <template v-if="editingTaskId === task.id">
                             <input v-model="editingTask.startTime" type="datetime-local" class="task-input"
                                 style="width:100%;min-width:120px;max-width:200px;" />
                         </template>
                         <template v-else>{{ task.startTime }}</template>
                     </td>
-                    <td>
+                    <td @mouseenter="handleMouseEnter(task.id, 3, $event)" 
+                        @mouseleave="handleMouseLeave()">
                         <template v-if="editingTaskId === task.id">
                             <input v-model="editingTask.endTime" type="datetime-local" class="task-input"
                                 style="width:100%;min-width:120px;max-width:200px;" />
                         </template>
                         <template v-else>{{ task.endTime }}</template>
                     </td>
-                    <td>
+                    <td @mouseenter="handleMouseEnter(task.id, 4, $event)" 
+                        @mouseleave="handleMouseLeave()">
                         <template v-if="editingTaskId === task.id">
                             <input v-model.number="editingTask.intervalMinutes" type="number" min="1" class="task-input"
                                 style="width:100%;min-width:60px;max-width:120px;" />
                         </template>
                         <template v-else>{{ task.intervalMinutes }}</template>
                     </td>
-                    <td>
+                    <td @mouseenter="handleMouseEnter(task.id, 5, $event)" 
+                        @mouseleave="handleMouseLeave()">
                         <span class="status" :class="task.enabled ? 'success' : 'error'">
                             {{ task.enabled ? '激活' : '关闭' }}
                         </span>
@@ -118,8 +125,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </template>
-                    </td>
+                        </template
                 </tr>
                 <!-- 链接子表 -->
                 <tr v-if="showLinks[task.id]">

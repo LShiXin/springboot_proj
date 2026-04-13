@@ -31,7 +31,12 @@ Vue.createApp({
             allOptionalUrls: [],
             showAddLinkModal: false,  // 控制添加链接弹窗显示
             selectedUrlId: '',        // 选中的链接ID
-            currentAddLinkTask: null  // 当前要添加链接的任务
+            currentAddLinkTask: null,  // 当前要添加链接的任务
+            
+            // 鼠标悬停相关
+            hoverTimeout: null,        // 悬停计时器
+            hoverTaskId: null,         // 当前悬停的任务ID
+            hoverColumnIndex: null     // 当前悬停的列索引
         };
     },
     mounted() {
@@ -134,7 +139,7 @@ Vue.createApp({
                 thit.allOptionalUrls = [];
                 return;
             }
-            var path="http://localhost:8080/api/monitottask/loadOptionalUrls"
+            var path="/api/monitottask/loadOptionalUrls"
             try {
                 const res = await fetch(path, {
                     method: 'GET',
@@ -180,7 +185,7 @@ Vue.createApp({
                 return;
             }
             try {
-                const res = await fetch('http://localhost:8080/api/monitottask/getbyuser', {
+                const res = await fetch('/api/monitottask/getbyuser', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -239,7 +244,7 @@ Vue.createApp({
                 }
             };
             try {
-                const res = await fetch('http://localhost:8080/api/monitottask/add', {
+                const res = await fetch('/api/monitottask/add', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -292,7 +297,7 @@ Vue.createApp({
             }
 
             try {
-                const res = await fetch('http://localhost:8080/api/monitottask/getTaskUrlsByTaskId', {
+                const res = await fetch('/api/monitottask/getTaskUrlsByTaskId', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -335,7 +340,7 @@ Vue.createApp({
             // 设置正在激活状态
             this.activatingTaskId = task.id;
 
-            fetch('http://localhost:8080/api/monitottask/handleActivate', {
+            fetch('/api/monitottask/handleActivate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -425,7 +430,7 @@ Vue.createApp({
                 }
             };
             try {
-                const res = await fetch('http://localhost:8080/api/monitottask/update', {
+                const res = await fetch('/api/monitottask/update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -467,7 +472,7 @@ Vue.createApp({
             }
 
             try {
-                const res = await fetch('http://localhost:8080/api/monitottask/handleDelete', {
+                const res = await fetch('/api/monitottask/handleDelete', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -603,7 +608,7 @@ Vue.createApp({
                     urlId: selectedLink.url_id
                 };
                 
-                const res = await fetch('http://localhost:8080/api/monitottask/addLink', {
+                const res = await fetch('/api/monitottask/addLink', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -664,7 +669,7 @@ Vue.createApp({
                 const originalEnabled = link.enabled;
                 
                 // 调用后端接口切换链接状态
-                const res = await fetch('http://localhost:8080/api/monitottask/toggleLinkStatus', {
+                const res = await fetch('/api/monitottask/toggleLinkStatus', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -714,7 +719,7 @@ Vue.createApp({
             }
             
             try {
-                const res = await fetch('http://localhost:8080/api/monitottask/deleteLink', {
+                const res = await fetch('/api/monitottask/deleteLink', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -739,7 +744,135 @@ Vue.createApp({
             } catch (err) {
                 alert('删除链接失败：' + err.message);
             }
+        },
+        
+        // 鼠标悬停相关方法
+        
+        // 处理鼠标进入数据列
+        handleMouseEnter(taskId, columnIndex, event) {
+            // 清除之前的计时器
+            if (this.hoverTimeout) {
+                clearTimeout(this.hoverTimeout);
+                this.hoverTimeout = null;
+            }
+            
+            // 设置新的计时器，500毫秒（半秒）后显示提示
+            this.hoverTimeout = setTimeout(() => {
+                // console.log(`触发显示下次执行时间提示，taskId: ${taskId}, columnIndex: ${columnIndex}`);
+                this.showNextExecutionTime(taskId, columnIndex, event);
+            }, 500);
+            
+            // 保存当前悬停的任务和列信息
+            this.hoverTaskId = taskId;
+            this.hoverColumnIndex = columnIndex;
+        },
+        
+        // 处理鼠标离开数据列
+        handleMouseLeave() {
+            // 清除计时器
+            if (this.hoverTimeout) {
+                clearTimeout(this.hoverTimeout);
+                this.hoverTimeout = null;
+            }
+            
+            // 清除悬停信息
+            this.hoverTaskId = null;
+            this.hoverColumnIndex = null;
+            
+            // 移除工具提示
+            this.removeTooltip();
+        },
+        
+        // 显示下次执行时间
+        showNextExecutionTime(taskId, columnIndex, event) {
+            // 找到对应的任务
+            const task = this.tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            // 获取下次执行时间
+            const nextExecutionTime = task.nextExecutionTime;
+            const lastExecutionTime = task.lastExecutionTime;
+            
+            // 构建提示文本
+            let tooltipText = '';
+            
+            if (nextExecutionTime) {
+                tooltipText = `下次执行时间：${nextExecutionTime}`;
+            } else {
+                tooltipText = '下次执行时间：未设置';
+            }
+            
+            // if (lastExecutionTime) {
+            //     tooltipText += `\n上次执行时间：${lastExecutionTime}`;
+            // }
+            
+            // 显示工具提示
+            this.showTooltip(event.target, tooltipText);
+        },
+        
+        // 显示工具提示
+        showTooltip(element, text) {
+            // 移除现有的工具提示
+            this.removeTooltip();
+            
+            // 创建工具提示元素
+            const tooltip = document.createElement('div');
+            tooltip.id = 'next-execution-tooltip';
+            tooltip.className = 'next-execution-tooltip';
+            tooltip.textContent = text;
+            
+            // 获取元素位置
+            const rect = element.getBoundingClientRect();
+            
+            // 设置工具提示位置
+            tooltip.style.position = 'fixed';
+            tooltip.style.left = `${rect.left + window.scrollX}px`;
+            tooltip.style.top = `${rect.top + window.scrollY - 40}px`;
+            tooltip.style.zIndex = '9999';
+            
+            // 添加样式
+            tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+            tooltip.style.color = 'white';
+            tooltip.style.padding = '8px 12px';
+            tooltip.style.borderRadius = '4px';
+            tooltip.style.fontSize = '12px';
+            tooltip.style.whiteSpace = 'pre-line';
+            tooltip.style.minWidth = '200px';
+            tooltip.style.maxWidth = '300px';
+            tooltip.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+            tooltip.style.pointerEvents = 'none';
+            tooltip.style.animation = 'fadeIn 0.2s ease-in-out';
+            
+            // 添加到页面
+            document.body.appendChild(tooltip);
+        },
+        
+        // 移除工具提示
+        removeTooltip() {
+            const tooltip = document.getElementById('next-execution-tooltip');
+            if (tooltip) {
+                tooltip.remove();
+            }
+        },
+        
+        // 格式化时间显示
+        formatDateTime(dateTimeStr) {
+            if (!dateTimeStr) return '未设置';
+            
+            try {
+                const date = new Date(dateTimeStr);
+                return date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            } catch (e) {
+                return dateTimeStr;
+            }
         }
-
+        
     }
 }).mount('#monitorManagerApp');

@@ -488,6 +488,104 @@
     margin-left: 5px;
     font-style: italic;
 }
+
+/* 任务行工具提示样式 */
+.task-row {
+    position: relative;
+}
+
+.task-row:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 50%;
+    top: -40px;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: pre-line;
+    z-index: 1000;
+    min-width: 200px;
+    max-width: 300px;
+    text-align: left;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.task-row:hover::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -10px;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+    z-index: 1001;
+    pointer-events: none;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* 确保工具提示不会干扰其他元素 */
+.data-table tbody tr {
+    position: relative;
+}
+
+/* 改进工具提示的可读性 */
+.task-row[title]:hover::after {
+    line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 下次执行时间工具提示样式 */
+.next-execution-tooltip {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.85);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: pre-line;
+    min-width: 200px;
+    max-width: 300px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    animation: fadeIn 0.2s ease-in-out;
+    z-index: 9999;
+    line-height: 1.5;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 工具提示箭头 */
+.next-execution-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+}
+
+/* 数据列悬停效果 */
+.data-table td:hover {
+    background-color: #f5f7fa;
+    transition: background-color 0.2s;
+}
+
+/* 确保工具提示不会干扰表格点击 */
+.data-table td {
+    position: relative;
+}
+
 [v-cloak] {
   display: none !important;
 }

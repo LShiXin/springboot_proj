@@ -86,4 +86,13 @@ public interface CrawlerService {
      */
     int deleteTaskNotifications(Long taskId);
 
+    /**
+     * 搜索通知
+     * 
+     * @param userId 用户ID
+     * @param keyword 搜索关键词（多个关键词用逗号分隔，支持中英文逗号）
+     * @return 匹配的通知列表
+     */
+    List<Notification> searchNotifications(Long userId, String keyword);
+
 }

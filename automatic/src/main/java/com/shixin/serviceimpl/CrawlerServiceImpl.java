@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.shixin.entity.Notification;
 import com.shixin.repository.NotificationRepository;
 import com.shixin.service.CrawlerService;
+import com.shixin.tool.crawler.KeywordHighlighter;
 import com.shixin.tool.crawler.beizhuxie.BeizhuxieTrainingCrawler;
 
 /**
@@ -160,13 +161,7 @@ public class CrawlerServiceImpl implements CrawlerService {
         return notificationRepository.findById(notificationId).orElse(null);
     }
 
-    /**
-     * 搜索通知
-     * 
-     * @param userId 用户ID
-     * @param keyword 搜索关键词
-     * @return 匹配的通知列表
-     */
+    @Override
     public List<Notification> searchNotifications(Long userId, String keyword) {
         logger.debug("搜索通知，用户ID: {}, 关键词: {}", userId, keyword);
         
@@ -174,13 +169,13 @@ public class CrawlerServiceImpl implements CrawlerService {
             return getUserNotifications(userId);
         }
         
-        // 这里可以添加更复杂的搜索逻辑
-        // 目前简单地在标题和内容中搜索
+        // 使用KeywordHighlighter的containsKeywords方法支持多关键词搜索
         List<Notification> userNotifications = getUserNotifications(userId);
         return userNotifications.stream()
                 .filter(notification -> 
-                    notification.getTitle().contains(keyword) || 
-                    (notification.getOriginalContent() != null && notification.getOriginalContent().contains(keyword)))
+                    KeywordHighlighter.containsKeywords(notification.getTitle(), keyword) || 
+                    (notification.getOriginalContent() != null && 
+                     KeywordHighlighter.containsKeywords(notification.getOriginalContent(), keyword)))
                 .toList();
     }
 
