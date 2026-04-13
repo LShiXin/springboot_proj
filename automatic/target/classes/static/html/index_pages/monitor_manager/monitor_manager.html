@@ -55,48 +55,42 @@
             <template v-for="task in tasks" :key="task.id">
                 <tr @click="handleToggleLinks(task.id)" style="cursor:pointer;" v-cloak
                    class="task-row">
-                    <td @mouseenter="handleMouseEnter(task.id, 0, $event)" 
-                        @mouseleave="handleMouseLeave()">
+                    <td>
                         <template v-if="editingTaskId === task.id">
                             <input v-model="editingTask.name" class="task-input"
                                 style="width:100%;min-width:80px;max-width:180px;" />
                         </template>
                         <template v-else>{{ task.name }}</template>
                     </td>
-                    <td @mouseenter="handleMouseEnter(task.id, 1, $event)" 
-                        @mouseleave="handleMouseLeave()">
+                    <td>
                         <template v-if="editingTaskId === task.id">
                             <input v-model="editingTask.keywords" class="task-input"
                                 style="width:100%;min-width:80px;max-width:180px;" />
                         </template>
                         <template v-else>{{ task.keywords }}</template>
                     </td>
-                    <td @mouseenter="handleMouseEnter(task.id, 2, $event)" 
-                        @mouseleave="handleMouseLeave()">
+                    <td>
                         <template v-if="editingTaskId === task.id">
                             <input v-model="editingTask.startTime" type="datetime-local" class="task-input"
                                 style="width:100%;min-width:120px;max-width:200px;" />
                         </template>
                         <template v-else>{{ task.startTime }}</template>
                     </td>
-                    <td @mouseenter="handleMouseEnter(task.id, 3, $event)" 
-                        @mouseleave="handleMouseLeave()">
+                    <td>
                         <template v-if="editingTaskId === task.id">
                             <input v-model="editingTask.endTime" type="datetime-local" class="task-input"
                                 style="width:100%;min-width:120px;max-width:200px;" />
                         </template>
                         <template v-else>{{ task.endTime }}</template>
                     </td>
-                    <td @mouseenter="handleMouseEnter(task.id, 4, $event)" 
-                        @mouseleave="handleMouseLeave()">
+                    <td>
                         <template v-if="editingTaskId === task.id">
                             <input v-model.number="editingTask.intervalMinutes" type="number" min="1" class="task-input"
                                 style="width:100%;min-width:60px;max-width:120px;" />
                         </template>
                         <template v-else>{{ task.intervalMinutes }}</template>
                     </td>
-                    <td @mouseenter="handleMouseEnter(task.id, 5, $event)" 
-                        @mouseleave="handleMouseLeave()">
+                    <td>
                         <span class="status" :class="task.enabled ? 'success' : 'error'">
                             {{ task.enabled ? '激活' : '关闭' }}
                         </span>
@@ -126,6 +120,7 @@
                                 </div>
                             </div>
                         </template
+                    </td>
                 </tr>
                 <!-- 链接子表 -->
                 <tr v-if="showLinks[task.id]">

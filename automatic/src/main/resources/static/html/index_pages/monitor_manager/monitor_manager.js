@@ -810,50 +810,6 @@ Vue.createApp({
             this.showTooltip(event.target, tooltipText);
         },
         
-        // 显示工具提示
-        showTooltip(element, text) {
-            // 移除现有的工具提示
-            this.removeTooltip();
-            
-            // 创建工具提示元素
-            const tooltip = document.createElement('div');
-            tooltip.id = 'next-execution-tooltip';
-            tooltip.className = 'next-execution-tooltip';
-            tooltip.textContent = text;
-            
-            // 获取元素位置
-            const rect = element.getBoundingClientRect();
-            
-            // 设置工具提示位置
-            tooltip.style.position = 'fixed';
-            tooltip.style.left = `${rect.left + window.scrollX}px`;
-            tooltip.style.top = `${rect.top + window.scrollY - 40}px`;
-            tooltip.style.zIndex = '9999';
-            
-            // 添加样式
-            tooltip.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
-            tooltip.style.color = 'white';
-            tooltip.style.padding = '8px 12px';
-            tooltip.style.borderRadius = '4px';
-            tooltip.style.fontSize = '12px';
-            tooltip.style.whiteSpace = 'pre-line';
-            tooltip.style.minWidth = '200px';
-            tooltip.style.maxWidth = '300px';
-            tooltip.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
-            tooltip.style.pointerEvents = 'none';
-            tooltip.style.animation = 'fadeIn 0.2s ease-in-out';
-            
-            // 添加到页面
-            document.body.appendChild(tooltip);
-        },
-        
-        // 移除工具提示
-        removeTooltip() {
-            const tooltip = document.getElementById('next-execution-tooltip');
-            if (tooltip) {
-                tooltip.remove();
-            }
-        },
         
         // 格式化时间显示
         formatDateTime(dateTimeStr) {
