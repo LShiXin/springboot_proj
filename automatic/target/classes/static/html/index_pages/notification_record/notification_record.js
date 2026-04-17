@@ -224,35 +224,8 @@ Vue.createApp({
             });
         },
         
-        // 显示工具提示
-        showTooltip(notification) {
-            this.currentTooltipUrl = notification.url;
-            this.showUrlTooltip = true;
-            
-            // 更新工具提示位置（跟随鼠标）
-            const updatePosition = (event) => {
-                this.tooltipStyle = {
-                    top: (event.clientY + 15) + 'px',
-                    left: (event.clientX + 15) + 'px'
-                };
-            };
-            
-            // 监听鼠标移动更新位置
-            document.addEventListener('mousemove', updatePosition);
-            
-            // 保存事件监听器以便移除
-            this.tooltipMouseMoveHandler = updatePosition;
-        },
-        
-        // 隐藏工具提示
-        hideTooltip() {
-            this.showUrlTooltip = false;
-            if (this.tooltipMouseMoveHandler) {
-                document.removeEventListener('mousemove', this.tooltipMouseMoveHandler);
-                this.tooltipMouseMoveHandler = null;
-            }
-        },
-        
+
+
         // 打开通知链接
         openNotificationUrl(notification) {
             if (notification.url) {

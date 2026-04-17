@@ -1,4 +1,4 @@
-    <div id="monitorManagerApp" class="page-card">
+<div id="monitorManagerApp" class="page-card">
     <div class="page-title">任务列表
         <button class="logout-btn" style="float:right;margin-top:-4px;" @click="handleAddTask">添加任务</button>
     </div>
@@ -53,8 +53,8 @@
             </tr>
             <!-- 任务列表 -->
             <template v-for="task in tasks" :key="task.id">
-                <tr @click="handleToggleLinks(task.id)" style="cursor:pointer;" v-cloak
-                   class="task-row">
+                <tr @click="handleToggleLinks(task.id)" style="cursor:pointer;" v-cloak class="task-row"
+                :title="'下次执行时间为：'+task.nextExecutionTime">
                     <td>
                         <template v-if="editingTaskId === task.id">
                             <input v-model="editingTask.name" class="task-input"
@@ -85,7 +85,7 @@
                     </td>
                     <td>
                         <template v-if="editingTaskId === task.id">
-                            <input v-model.number="editingTask.intervalMinutes" type="number" min="1" class="task-input"
+                            <input v-model.number="editingTask.intervalMinutes" type="number"
                                 style="width:100%;min-width:60px;max-width:120px;" />
                         </template>
                         <template v-else>{{ task.intervalMinutes }}</template>
@@ -119,7 +119,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </template
+                        </template>
                     </td>
                 </tr>
                 <!-- 链接子表 -->
@@ -164,7 +164,7 @@
             </template>
 
         </tbody>
-        
+
     </table>
 
     <!-- 添加扫描链接弹窗 -->
@@ -179,21 +179,24 @@
                     <label>选择扫描链接：</label>
                     <select v-model="selectedUrlId" class="link-select" @input="onUrlSelectChange">
                         <option value="">请选择链接</option>
-                        <option v-for="item in filteredOptionalUrls" :key="item.url_id" :value="item.url_id" 
-                                :disabled="item.isAdded" :class="{ 'option-added': item.isAdded }">
+                        <option v-for="item in filteredOptionalUrls" :key="item.url_id" :value="item.url_id"
+                            :disabled="item.isAdded" :class="{ 'option-added': item.isAdded }">
                             {{ item.remark }} - {{ item.url }} {{ item.isAdded ? '(已添加)' : '' }}
                         </option>
                     </select>
-                    <div v-if="filteredOptionalUrls.length === 0" class="empty-hint" style="color: #f56c6c; font-size: 12px; margin-top: 5px;">
+                    <div v-if="filteredOptionalUrls.length === 0" class="empty-hint"
+                        style="color: #f56c6c; font-size: 12px; margin-top: 5px;">
                         暂无可用链接，请先添加基础链接
                     </div>
-                    <div v-else-if="selectedUrlId === ''" class="select-hint" style="color: #e6a23c; font-size: 12px; margin-top: 5px;">
+                    <div v-else-if="selectedUrlId === ''" class="select-hint"
+                        style="color: #e6a23c; font-size: 12px; margin-top: 5px;">
                         请从下拉列表中选择一个链接
                     </div>
                     <div v-else class="selected-hint" style="color: #67c23a; font-size: 12px; margin-top: 5px;">
                         已选择链接，可以点击确认添加
                     </div>
-                    <div v-if="filteredOptionalUrls.some(item => item.isAdded)" class="added-info" style="color: #999; font-size: 12px; margin-top: 5px;">
+                    <div v-if="filteredOptionalUrls.some(item => item.isAdded)" class="added-info"
+                        style="color: #999; font-size: 12px; margin-top: 5px;">
                         灰色选项表示该链接已添加到当前任务中，无法重复添加
                     </div>
                 </div>
@@ -211,9 +214,11 @@
             </div>
             <div class="modal-footer">
                 <button class="logout-btn cancel-btn" @click="closeAddLinkModal">取消</button>
-                <button class="logout-btn confirm-btn" @click="confirmAddLink" :disabled="!selectedUrlId" 
+                <button class="logout-btn confirm-btn" @click="confirmAddLink" :disabled="!selectedUrlId"
                     :title="buttonTooltip">确认添加</button>
             </div>
+        </div>
+    </div>
+    <link rel="stylesheet" href="/html/index_pages/monitor_manager/monitor_manager.css" />
+    <script src="/html/index_pages/monitor_manager/monitor_manager.js"></script>
 </div>
-<link rel="stylesheet" href="/html/index_pages/monitor_manager/monitor_manager.css" />
-<script src="/html/index_pages/monitor_manager/monitor_manager.js"></script>

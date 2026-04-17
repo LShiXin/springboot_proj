@@ -30,8 +30,6 @@
             <template v-for="notification in filteredNotifications" :key="notification.id">
                 <tr 
                     :class="{'unread-row': !notification.read, 'read-row': notification.read}"
-                    @mouseover="showTooltip(notification)"
-                    @mouseleave="hideTooltip"
                     @dblclick="openNotificationUrl(notification)"
                     @click="markAsRead(notification)"
                     :title="'双击打开链接: ' + notification.url"

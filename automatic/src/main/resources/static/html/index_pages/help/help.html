@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ 帮助中心 · 智能监控助手</title>
+    <!-- 优雅字体与图标库 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- 原有样式链接保留（可被覆盖） -->
+    <link rel="stylesheet" href="/html/index_pages/help/help.css">
+    <link rel="stylesheet" href="/html/css/common.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        /* ===== 帮助中心样式（作用域隔离版） ===== */
+        /* 所有样式仅作用于 #helpApp 容器内部，不会污染主页面 */
+
+        #helpApp * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        #helpApp {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(145deg, #f4f7fc 0%, #e9eef4 100%);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+            color: #1e293b;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            max-width: 1280px;
+            margin: 0 auto;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 2.5rem;
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.15),
+                0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.2s ease;
+        }
+
+        @media (max-width: 640px) {
+            #helpApp {
+                padding: 1.8rem 1.5rem;
+                border-radius: 2rem;
+            }
+        }
+
+        /* 页面主标题 */
+        #helpApp .page-title {
+            font-size: 2.4rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 80%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 2.2rem;
+            padding-bottom: 1.2rem;
+            border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        #helpApp .page-title i {
+            background: #3b82f6;
+            background: linear-gradient(145deg, #2563eb, #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 2.2rem;
+        }
+
+        /* 内容区域 */
+        #helpApp .help-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+
+        /* 每个区块卡片 */
+        #helpApp .help-section {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            padding: 2rem 2.2rem;
+            box-shadow: 0 8px 20px -8px rgba(0, 20, 40, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+
+        #helpApp .help-section:hover {
+            box-shadow: 0 18px 30px -12px rgba(0, 35, 70, 0.12);
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        /* 标题装饰 */
+        #helpApp .help-section h2 {
+            font-size: 1.9rem;
+            font-weight: 650;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #0f172a;
+            border-left: none;
+            padding-left: 0;
+        }
+
+        #helpApp .help-section h2 i {
+            color: #3b82f6;
+            font-size: 1.8rem;
+            background: #eef2ff;
+            width: 2.8rem;
+            height: 2.8rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1.2rem;
+            box-shadow: 0 6px 10px -4px rgba(59, 130, 246, 0.2);
+        }
+
+        #helpApp .help-section h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 1.8rem 0 1rem;
+            color: #1e293b;
+        }
+
+        #helpApp .help-section h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 1.2rem 0 0.6rem;
+            color: #334155;
+        }
+
+        /* 趣味小贴士 */
+        #helpApp .fun-fact {
+            background: #f0f9ff;
+            border-radius: 1.5rem;
+            padding: 1.2rem 1.8rem;
+            margin: 1.8rem 0;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 6px 12px -6px rgba(14, 165, 233, 0.12);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 1.05rem;
+            color: #0369a1;
+        }
+
+        #helpApp .fun-fact i {
+            font-size: 1.5rem;
+            color: #0ea5e9;
+        }
+
+        /* 重要提醒卡片 */
+        #helpApp .important-note {
+            background: linear-gradient(105deg, #fef9e7 0%, #fff7e0 100%);
+            border-radius: 1.8rem;
+            padding: 1.6rem 2rem;
+            margin: 2rem 0 0.5rem;
+            border-left: 8px solid #f59e0b;
+            box-shadow: 0 10px 18px -10px rgba(245, 158, 11, 0.2);
+        }
+
+        #helpApp .important-note h3 {
+            margin-top: 0;
+            color: #b45309;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* 工作流列表 */
+        #helpApp .workflow-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        #helpApp .workflow-list li {
+            margin-bottom: 1.6rem;
+            padding-left: 2.2rem;
+            position: relative;
+        }
+
+        #helpApp .workflow-list li::before {
+            content: "✨";
+            position: absolute;
+            left: -0.2rem;
+            top: 0.1rem;
+            font-size: 1.3rem;
+            opacity: 0.8;
+        }
+
+        #helpApp .workflow-list strong {
+            color: #2563eb;
+        }
+
+        /* 代码块 */
+        #helpApp .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.2rem 1.5rem;
+            border-radius: 1.2rem;
+            margin: 1rem 0;
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 0.9rem;
+            border: 1px solid #334155;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2), 0 6px 10px -6px rgba(0, 0, 0, 0.3);
+            overflow-x: auto;
+        }
+
+        #helpApp .bad-example {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 6px solid #dc2626;
+        }
+
+        #helpApp .good-example {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 6px solid #16a34a;
+        }
+
+        /* 公告网格 */
+        #helpApp .announcement-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.8rem;
+            margin: 1.8rem 0;
+        }
+
+        #helpApp .announcement-card {
+            background: white;
+            border-radius: 1.8rem;
+            padding: 1.8rem 1.8rem 2rem;
+            box-shadow: 0 15px 30px -12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ffffff;
+            transition: all 0.2s;
+        }
+
+        #helpApp .announcement-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 22px 35px -12px rgba(37, 99, 235, 0.15);
+            border-color: #bfdbfe;
+        }
+
+        #helpApp .announcement-card h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #1e40af;
+            border-bottom: 2px dashed #93c5fd;
+            padding-bottom: 0.8rem;
+        }
+
+        /* 最佳实践区域 */
+        #helpApp .best-practice {
+            background: #f8fafc;
+            border-radius: 2rem;
+            padding: 2rem 2rem 1.8rem;
+            margin: 2rem 0 1rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        #helpApp .reasons-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 1.5rem;
+            margin: 1.8rem 0;
+        }
+
+        #helpApp .reason-item {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.5rem 1.5rem;
+            box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f1f5f9;
+        }
+
+        #helpApp .reason-item h4 {
+            margin-top: 0;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        #helpApp .example-box {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.8rem;
+            margin-top: 1.8rem;
+            border: 1px solid #e0e7ff;
+        }
+
+        /* 其他小贴士 */
+        #helpApp .other-tips {
+            margin-top: 2rem;
+            background: #f1f5f9;
+            padding: 1.5rem 2rem;
+            border-radius: 1.5rem;
+        }
+
+        #helpApp .other-tips p {
+            margin: 0.7rem 0;
+            display: flex;
+            align-items: baseline;
+            gap: 0.6rem;
+        }
+
+        /* 故障排除网格 */
+        #helpApp .troubleshooting {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.8rem;
+            margin-top: 1.5rem;
+        }
+
+        #helpApp .problem {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.8rem 1.8rem;
+            box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f0f4fa;
+        }
+
+        #helpApp .problem h4 {
+            margin-top: 0;
+            color: #b91c1c;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #helpApp .problem ul {
+            padding-left: 1.5rem;
+        }
+
+        #helpApp .problem li {
+            margin: 0.6rem 0;
+        }
+
+        /* 结尾区域 */
+        #helpApp .final-section {
+            text-align: center;
+            border-bottom: none;
+            background: linear-gradient(135deg, #fafcff 0%, #eef4ff 100%);
+            border-radius: 2.5rem;
+        }
+
+        #helpApp .signature {
+            margin-top: 2.5rem;
+            padding-top: 2rem;
+            border-top: 2px dashed #cbd5e1;
+        }
+
+        #helpApp .signature p {
+            margin: 0.5rem 0;
+        }
+
+        #helpApp .timestamp {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        #helpApp .welcome-tip {
+            background: #dbeafe;
+            border-radius: 3rem;
+            padding: 1.2rem 2rem;
+            margin: 2rem 0;
+            color: #1e3a8a;
+            font-weight: 500;
+            border: 1px solid #bfdbfe;
+        }
+
+        /* 列表修饰 */
+        #helpApp ul,
+        #helpApp ol {
+            padding-left: 1.8rem;
+            margin: 1rem 0;
+        }
+
+        #helpApp li {
+            margin: 0.4rem 0;
+        }
+
+        /* 段落 */
+        #helpApp p {
+            margin-bottom: 0.8rem;
+        }
+
+        #helpApp strong {
+            color: #0f172a;
+            font-weight: 650;
+        }
+
+        /* 图标适配 */
+        #helpApp .fa,
+        #helpApp .fas,
+        #helpApp .far {
+            font-size: 1.1em;
+        }
+
+        /* 响应式微调 */
+        @media (max-width: 600px) {
+            #helpApp .page-title {
+                font-size: 1.9rem;
+            }
+
+            #helpApp .help-section h2 {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="helpApp" class="page-card">
+        <div class="page-title">
+            <i class="fas fa-life-ring"></i>
+            🎉 帮助中心 · 自动化监控管理系统
+            <span
+                style="margin-left: auto; font-size: 1rem; background: #e2e8f0; padding: 0.3rem 1rem; border-radius: 40px; color: #1e293b; font-weight: 500; letter-spacing: normal;">v1.1
+                小蜜蜂版</span>
+        </div>
+
+        <div class="help-content">
+            <!-- 欢迎部分 -->
+            <div class="help-section">
+                <h2><i class="fas fa-hand-wave"></i> 亲爱的用户，你好呀！</h2>
+                <p style="font-size: 1.2rem;">欢迎来到我们的 <strong>v1.1 初步运行版本</strong> 帮助中心！</p>
+                <p>就像刚学会走路的小宝宝一样，这个系统还在努力成长中~ 🚀</p>
+                <p>我是你的智能监控小助手，专门帮你盯着那些重要的网站通知！让我来给你介绍一下我是怎么工作的吧～</p>
+                <div class="fun-fact">
+                    <i class="fas fa-bell"></i>
+                    <div><strong>💡 小贴士：</strong>我每10秒就会醒来一次，像个勤劳的小蜜蜂一样检查有没有需要干的工作！🐝</div>
+                </div>
+            </div>
+
+            <!-- 项目执行逻辑 -->
+            <div class="help-section">
+                <h2><i class="fas fa-cogs"></i> 我是怎么工作的？</h2>
+                <p>我的工作流程就像一个勤劳的小蜜蜂🐝：</p>
+                <ol class="workflow-list">
+                    <li>
+                        <strong>⏰ 定时巡逻：</strong>我每10秒就会检查一次数据库，看看有没有到时间的监控任务
+                        <div class="code-block">@Scheduled(fixedRate = 10000) // 就是这里让我保持勤劳！</div>
+                    </li>
+                    <li>
+                        <strong>🔍 任务发现：</strong>找到到期的任务后，我会用"乐观锁"技术（防止重复干活）来安全地执行
+                        <div class="fun-fact" style="margin-top: 0.8rem;">
+                            <i class="fas fa-lock"></i>
+                            <div><strong>🎯 专业解释：</strong>乐观锁就像在多人协作时做个标记，确保我不会和别人抢着干同一件事！</div>
+                        </div>
+                    </li>
+                    <li>
+                        <strong>🕷️ 爬虫出动：</strong>根据任务配置，我会派出对应的爬虫小分队：
+                        <ul>
+                            <li>🐻 <strong>北注协小分队：</strong>负责爬取 beizhuxie.org.cn 的培训通知</li>
+                            <li>🐉 <strong>中注协小分队：</strong>负责爬取 cicpa.org.cn 的通知公告和要闻</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>📝 通知处理：</strong>爬取到通知后，我会：
+                        <ul>
+                            <li>🎨 用关键词高亮显示重要内容</li>
+                            <li>💾 保存到数据库（不会重复保存哦）</li>
+                            <li>📊 记录执行情况，方便你查看统计</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>🔄 下次计划：</strong>根据你的设置，我会自动计算下次执行时间：
+                        <ul>
+                            <li>⏱️ 固定频率：每隔X毫秒执行一次</li>
+                            <li>⏰ 固定延迟：上次任务完成后X毫秒执行</li>
+                            <li>📅 Cron表达式：像Linux定时任务一样精确控制</li>
+                            <li>🎯 一次性任务：只执行一次就收工</li>
+                        </ul>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- 系统公告 -->
+            <div class="help-section">
+                <h2><i class="fas fa-bullhorn"></i> 系统公告（我帮你盯着这些！）</h2>
+                <p>我主要帮你监控两大机构的通知：</p>
+
+                <div class="announcement-grid">
+                    <div class="announcement-card">
+                        <h3><i class="fas fa-bear"></i> 北京注册会计师协会</h3>
+                        <p><strong>监控网站：</strong>beizhuxie.org.cn</p>
+                        <p><strong>监控内容：</strong>培训通知、重要公告</p>
+                        <p><strong>我的策略：</strong>我会仔细爬取每个培训页面，找出最新的培训机会！</p>
+                    </div>
+
+                    <div class="announcement-card">
+                        <h3><i class="fas fa-dragon"></i> 中国注册会计师协会</h3>
+                        <p><strong>监控网站：</strong>cicpa.org.cn</p>
+                        <p><strong>监控内容：</strong></p>
+                        <ul style="margin-top: 0.2rem;">
+                            <li>📰 要闻动态 (xxfb/news/)</li>
+                            <li>📋 通知公告 (xxfb/tzgg/)</li>
+                        </ul>
+                        <p><strong>我的策略：</strong>我会翻看多页内容，确保不遗漏任何重要通知！</p>
+                    </div>
+                </div>
+
+                <div class="important-note">
+                    <h3><i class="fas fa-star"></i> 重要提醒！</h3>
+                    <p>我只会保存最近一个月内的通知，太旧的通知我就不保存啦～</p>
+                    <p>所有通知都会在<strong>"通知记录"</strong>页面展示，你可以按任务、时间、阅读状态进行筛选！</p>
+                </div>
+            </div>
+
+            <!-- 最佳实践 -->
+            <div class="help-section">
+                <h2><i class="fas fa-rocket"></i> 最佳实践：让你的监控更高效！</h2>
+
+                <div class="best-practice">
+                    <h3 style="margin-top: 0;"><i class="fas fa-bullseye" style="color:#2563eb;"></i> 核心建议：一个任务，一个关键词！
+                    </h3>
+                    <p>这是我的<strong>超级重要</strong>的建议！让我告诉你为什么：</p>
+
+                    <div class="reasons-list">
+                        <div class="reason-item">
+                            <h4><i class="fas fa-crosshairs"></i> 更精准</h4>
+                            <p>每个任务专注于一个关键词，匹配结果更准确，不会因为多个关键词相互干扰。</p>
+                        </div>
+                        <div class="reason-item">
+                            <h4><i class="fas fa-chart-bar"></i> 更好统计</h4>
+                            <p>执行记录和通知统计会更清晰，你知道每个关键词具体带来了多少新通知。</p>
+                        </div>
+                        <div class="reason-item">
+                            <h4><i class="fas fa-tasks"></i> 更易管理</h4>
+                            <p>如果某个关键词的通知突然增多，你可以快速定位是哪个关键词触发的。</p>
+                        </div>
+                        <div class="reason-item">
+                            <h4><i class="fas fa-bolt"></i> 更高性能</h4>
+                            <p>关键词越少，我的处理速度越快，可以更快地为你发现新通知！</p>
+                        </div>
+                    </div>
+
+                    <div class="example-box">
+                        <h4 style="margin-top: 0;">📝 举个例子：</h4>
+                        <p><strong>❌ 不推荐的做法：</strong></p>
+                        <div class="code-block bad-example">培训,CPA,考试,报名,资格</div>
+                        <p><strong>✅ 推荐的做法：</strong></p>
+                        <div class="code-block good-example">任务1：培训<br>任务2：CPA<br>任务3：考试<br>任务4：报名</div>
+                        <p>这样每个任务都很专注，管理起来超方便！</p>
+                    </div>
+                </div>
+
+                <div class="other-tips">
+                    <h3><i class="fas fa-lightbulb"></i> 其他小贴士：</h3>
+                    <p><i class="fas fa-calendar-alt" style="color:#2563eb;"></i> <strong>📅
+                            合理设置时间：</strong>根据通知发布频率设置执行间隔，太频繁可能会给网站带来压力哦～</p>
+                    <p><i class="fas fa-bell"></i> <strong>🔔 及时查看通知：</strong>我找到新通知后会在统计页面显示，记得经常来看看！</p>
+                    <p><i class="fas fa-gear"></i> <strong>🛠️ 任务管理：</strong>不需要的任务记得及时关闭或删除，让我专心做重要的事！</p>
+                    <p><i class="fas fa-magnifying-glass"></i> <strong>🔍 关键词优化：</strong>使用更具体的关键词，比如"北京培训"比"培训"更精准！</p>
+                </div>
+            </div>
+
+            <!-- 故障排除 -->
+            <div class="help-section">
+                <h2><i class="fas fa-screwdriver-wrench"></i> 遇到问题怎么办？</h2>
+                <div class="troubleshooting">
+                    <div class="problem">
+                        <h4><i class="fas fa-circle-exclamation"></i> 任务没有执行？</h4>
+                        <ul>
+                            <li>✅ 检查任务状态是否为"激活"</li>
+                            <li>✅ 确认当前时间在任务的开始和结束时间范围内</li>
+                            <li>✅ 查看"执行记录"页面，看看是否有错误信息</li>
+                        </ul>
+                    </div>
+                    <div class="problem">
+                        <h4><i class="fas fa-inbox"></i> 没有收到通知？</h4>
+                        <ul>
+                            <li>✅ 检查网站是否有新通知发布</li>
+                            <li>✅ 确认关键词设置是否正确</li>
+                            <li>✅ 查看通知是否在"最近一个月"的时间范围内</li>
+                        </ul>
+                    </div>
+                    <div class="problem">
+                        <h4><i class="fas fa-gauge-high"></i> 执行速度慢？</h4>
+                        <ul>
+                            <li>✅ 减少每个任务的关键词数量</li>
+                            <li>✅ 适当增加执行间隔时间</li>
+                            <li>✅ 检查网络连接是否正常</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 结尾 -->
+            <div class="help-section final-section">
+                <h2 style="justify-content: center;"><i class="fas fa-party-horn"></i> 恭喜你！现在你是监控专家啦！</h2>
+                <p>目前我们已经实现了：</p>
+                <ul style="display: inline-block; text-align: left; margin: 1.5rem auto;">
+                    <li>✅ 智能网站监控和爬虫功能</li>
+                    <li>✅ 定时任务调度引擎</li>
+                    <li>✅ 实时通知系统</li>
+                    <li>✅ 用户友好的管理界面</li>
+                </ul>
+                <p>但请理解，我们还在不断优化和完善中，可能会有一些小bug或者功能不够完美的地方。</p>
+                <p>如果你遇到任何问题，或者有好的建议，欢迎随时反馈！我们会像勤劳的小蜜蜂一样持续改进的~ 🐝</p>
+                <div class="welcome-tip">
+                    <i class="fas fa-heart" style="color:#b45309;"></i> 感谢你的理解和支持，让我们一起见证这个系统的成长吧！✨
+                </div>
+                <p>记住，我是你的智能监控小助手，24小时不间断为你工作！</p>
+                <p>如果有任何问题，记得查看"执行记录"页面，那里有我的工作日志。</p>
+                <p>祝你在注册会计师的道路上一切顺利，重要的通知一个都不会错过！</p>
+
+                <div class="signature">
+                    <p style="font-size: 1.4rem;">🤖 你的小助手：<strong
+                            style="background: linear-gradient(145deg,#2563eb,#7c3aed); -webkit-background-clip:text; background-clip:text; color:transparent;">小监监</strong>
+                    </p>
+                    <p class="timestamp"><i class="far fa-calendar-alt"></i> 最后更新：v1.1 初步运行版本 · 2026年4月17日</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript (Vue 挂载) -->
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    // 可添加动态数据
+                };
+            },
+            mounted() {
+                console.log('✨ 优雅帮助页面加载完成！小监监正在勤劳工作~');
+            }
+        }).mount('#helpApp');
+    </script>
+</body>
+
+</html>

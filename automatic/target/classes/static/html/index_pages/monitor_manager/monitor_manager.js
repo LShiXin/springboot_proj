@@ -32,11 +32,14 @@ Vue.createApp({
             showAddLinkModal: false,  // 控制添加链接弹窗显示
             selectedUrlId: '',        // 选中的链接ID
             currentAddLinkTask: null,  // 当前要添加链接的任务
-            
-            // 鼠标悬停相关
-            hoverTimeout: null,        // 悬停计时器
-            hoverTaskId: null,         // 当前悬停的任务ID
-            hoverColumnIndex: null     // 当前悬停的列索引
+
+            showTimeTooltip: false,        // 控制时间提示框显示
+            timeTooltipContent: '',        // 提示框内容
+            timeTooltipStyle: {            // 提示框位置样式
+                top: '0px',
+                left: '0px'
+            },
+            timeMouseMoveHandler: null     // 保存 mousemove 事件处理函数
         };
     },
     mounted() {
@@ -44,8 +47,8 @@ Vue.createApp({
         this.loadUserTasks();
 
         // 加载所有可选的用户链接
-        this.loadOptionalUrls(); 
-        
+        this.loadOptionalUrls();
+
     },
     computed: {
         // 计算属性：判断编辑的任务是否有修改
@@ -64,7 +67,7 @@ Vue.createApp({
             if (!this.selectedUrlId || !this.allOptionalUrls || this.allOptionalUrls.length === 0) {
                 return null;
             }
-            
+
             // 将selectedUrlId转换为字符串进行比较，确保类型一致
             const selectedIdStr = String(this.selectedUrlId);
             const foundItem = this.allOptionalUrls.find(item => {
@@ -75,13 +78,13 @@ Vue.createApp({
                 // 将url_id转换为字符串进行比较
                 return String(item.url_id) === selectedIdStr;
             });
-            
+
             console.log('selectedLinkDetail计算属性执行:');
             console.log('  selectedUrlId:', this.selectedUrlId);
             console.log('  selectedIdStr:', selectedIdStr);
             console.log('  allOptionalUrls长度:', this.allOptionalUrls.length);
             console.log('  找到的项:', foundItem);
-            
+
             return foundItem || null;
         },
         // 计算属性：获取按钮提示信息
@@ -107,7 +110,7 @@ Vue.createApp({
             if (!this.allOptionalUrls || this.allOptionalUrls.length === 0) {
                 return [];
             }
-            
+
             // 如果没有当前任务或当前任务没有链接，返回所有可选链接
             if (!this.currentAddLinkTask || !this.currentAddLinkTask.links || this.currentAddLinkTask.links.length === 0) {
                 return this.allOptionalUrls.map(item => ({
@@ -115,10 +118,10 @@ Vue.createApp({
                     isAdded: false
                 }));
             }
-            
+
             // 获取当前任务已添加链接的URL集合
             const addedUrls = new Set(this.currentAddLinkTask.links.map(link => link.url));
-            
+
             // 标记哪些链接已经添加
             return this.allOptionalUrls.map(item => ({
                 ...item,
@@ -131,15 +134,15 @@ Vue.createApp({
             this.addingTask = true;
             this.newTask = { name: '', keywords: '', startTime: '', endTime: '', intervalMinutes: '', enabled: true };
         },
-        async loadOptionalUrls(){
-            var thit=this
+        async loadOptionalUrls() {
+            var thit = this
             var token = localStorage.getItem('token');
             if (!token) {
                 console.warn('未找到token，无法加载可选链接');
                 thit.allOptionalUrls = [];
                 return;
             }
-            var path="/api/monitottask/loadOptionalUrls"
+            var path = "/api/monitottask/loadOptionalUrls"
             try {
                 const res = await fetch(path, {
                     method: 'GET',
@@ -148,7 +151,7 @@ Vue.createApp({
                         'Authorization': 'Bearer ' + token
                     }
                 });
-                
+
                 if (!res.ok) {
                     if (res.status === 401) {
                         console.warn('Token无效或已过期，请重新登录');
@@ -157,7 +160,7 @@ Vue.createApp({
                     }
                     throw new Error(`HTTP错误: ${res.status}`);
                 }
-                
+
                 const result = await res.json();
                 if (result.code === 200 && result.data) {
                     thit.allOptionalUrls = result.data;
@@ -505,38 +508,38 @@ Vue.createApp({
             console.log(task)
         },
         // 点击添加链接，显示当前所有可选择链接 allOptionalUrls
-        async handleAddLink(task){
+        async handleAddLink(task) {
             console.log('当前任务:', task);
             console.log('可选链接列表:', this.allOptionalUrls);
             this.currentAddLinkTask = task;
-            
+
             // 总是清空选择，让用户手动选择
             this.selectedUrlId = '';
-            
+
             // 如果当前任务还没有加载links数据，先加载
             if (!task.links || task.links.length === 0) {
                 console.log('当前任务links未加载，先获取links数据');
                 await this.getTaskUrls(task.id);
             }
-            
+
             this.showAddLinkModal = true;
         },
 
         // 下拉框变化处理
         onUrlSelectChange(event) {
-            
+
             // 获取选中的option
             if (event?.target?.options) {
                 const selectedOption = event.target.options[event.target.selectedIndex];
             }
-            
+
             // 尝试多种方式获取值
             let selectedValue = null;
             if (event?.target?.value !== undefined) {
                 selectedValue = event.target.value;
                 console.log('14. 从event.target.value获取值:', selectedValue);
             }
-            
+
             // 也检查selectedIndex
             if (event?.target?.selectedIndex !== undefined && event.target.selectedIndex >= 0) {
                 const option = event.target.options[event.target.selectedIndex];
@@ -559,7 +562,7 @@ Vue.createApp({
 
         // 确认添加链接
         async confirmAddLink() {
-            
+
             if (!this.selectedUrlId) {
                 console.error('错误：没有选中的链接ID');
                 alert('请选择要添加的链接');
@@ -580,10 +583,10 @@ Vue.createApp({
 
             // 检查链接是否已经添加到当前任务中
             if (this.currentAddLinkTask.links && this.currentAddLinkTask.links.length > 0) {
-                const isAlreadyAdded = this.currentAddLinkTask.links.some(link => 
+                const isAlreadyAdded = this.currentAddLinkTask.links.some(link =>
                     link.url === selectedLink.url
                 );
-                
+
                 if (isAlreadyAdded) {
                     alert('该链接已经添加到当前任务中，不能重复添加');
                     return;
@@ -607,7 +610,7 @@ Vue.createApp({
                     methodId: selectedLink.method_id,
                     urlId: selectedLink.url_id
                 };
-                
+
                 const res = await fetch('/api/monitottask/addLink', {
                     method: 'POST',
                     headers: {
@@ -624,10 +627,10 @@ Vue.createApp({
 
                 const result = await res.json();
                 console.log('8. 后端响应:', result);
-                
+
                 if (result.code === 200) {
                     alert('链接添加成功');
-                    
+
                     // 如果当前任务正在显示链接子表，则刷新链接列表
                     if (this.showLinks[this.currentAddLinkTask.id]) {
                         // 这里可以调用刷新链接列表的方法，或者直接添加到本地列表
@@ -642,7 +645,7 @@ Vue.createApp({
                             remark: selectedLink.remark
                         });
                     }
-                    
+
                     this.closeAddLinkModal();
                 } else {
                     alert('添加失败：' + (result.message || '未知错误'));
@@ -651,23 +654,23 @@ Vue.createApp({
                 alert('添加链接失败：' + err.message);
             }
         },
-        
+
         // 切换链接状态
         async toggleLinkStatus(link) {
             if (!confirm(`确定要${link.enabled ? '关闭' : '启用'}该链接吗？`)) {
                 return;
             }
-            
+
             const token = localStorage.getItem('token');
             if (!token) {
                 alert('登录状态失效，请先登录');
                 return;
             }
-            
+
             try {
                 // 先保存原始状态，以便在失败时回滚
                 const originalEnabled = link.enabled;
-                
+
                 // 调用后端接口切换链接状态
                 const res = await fetch('/api/monitottask/toggleLinkStatus', {
                     method: 'POST',
@@ -677,12 +680,12 @@ Vue.createApp({
                     },
                     body: JSON.stringify(link.id)
                 });
-                
+
                 if (!res.ok) {
                     const errorData = await res.json();
                     throw new Error(errorData.message || '切换链接状态失败');
                 }
-                
+
                 const result = await res.json();
                 if (result.code === 200) {
                     // 更新链接状态为后端返回的新状态
@@ -699,25 +702,25 @@ Vue.createApp({
                 link.enabled = !link.enabled;
             }
         },
-        
+
         // 删除链接
         async handleDeleteLink(task, idx) {
             if (!confirm('确定要删除该链接吗？')) {
                 return;
             }
-            
+
             const token = localStorage.getItem('token');
             if (!token) {
                 alert('登录状态失效，请先登录');
                 return;
             }
-            
+
             const link = task.links[idx];
             if (!link || !link.id) {
                 alert('链接信息不完整，无法删除');
                 return;
             }
-            
+
             try {
                 const res = await fetch('/api/monitottask/deleteLink', {
                     method: 'POST',
@@ -727,12 +730,12 @@ Vue.createApp({
                     },
                     body: JSON.stringify(link.id)
                 });
-                
+
                 if (!res.ok) {
                     const errorData = await res.json();
                     throw new Error(errorData.message || '删除链接失败');
                 }
-                
+
                 const result = await res.json();
                 if (result.code === 200 && result.data === true) {
                     // 从前端列表中移除已删除的链接
@@ -744,91 +747,7 @@ Vue.createApp({
             } catch (err) {
                 alert('删除链接失败：' + err.message);
             }
-        },
-        
-        // 鼠标悬停相关方法
-        
-        // 处理鼠标进入数据列
-        handleMouseEnter(taskId, columnIndex, event) {
-            // 清除之前的计时器
-            if (this.hoverTimeout) {
-                clearTimeout(this.hoverTimeout);
-                this.hoverTimeout = null;
-            }
-            
-            // 设置新的计时器，500毫秒（半秒）后显示提示
-            this.hoverTimeout = setTimeout(() => {
-                // console.log(`触发显示下次执行时间提示，taskId: ${taskId}, columnIndex: ${columnIndex}`);
-                this.showNextExecutionTime(taskId, columnIndex, event);
-            }, 500);
-            
-            // 保存当前悬停的任务和列信息
-            this.hoverTaskId = taskId;
-            this.hoverColumnIndex = columnIndex;
-        },
-        
-        // 处理鼠标离开数据列
-        handleMouseLeave() {
-            // 清除计时器
-            if (this.hoverTimeout) {
-                clearTimeout(this.hoverTimeout);
-                this.hoverTimeout = null;
-            }
-            
-            // 清除悬停信息
-            this.hoverTaskId = null;
-            this.hoverColumnIndex = null;
-            
-            // 移除工具提示
-            this.removeTooltip();
-        },
-        
-        // 显示下次执行时间
-        showNextExecutionTime(taskId, columnIndex, event) {
-            // 找到对应的任务
-            const task = this.tasks.find(t => t.id === taskId);
-            if (!task) return;
-            
-            // 获取下次执行时间
-            const nextExecutionTime = task.nextExecutionTime;
-            const lastExecutionTime = task.lastExecutionTime;
-            
-            // 构建提示文本
-            let tooltipText = '';
-            
-            if (nextExecutionTime) {
-                tooltipText = `下次执行时间：${nextExecutionTime}`;
-            } else {
-                tooltipText = '下次执行时间：未设置';
-            }
-            
-            // if (lastExecutionTime) {
-            //     tooltipText += `\n上次执行时间：${lastExecutionTime}`;
-            // }
-            
-            // 显示工具提示
-            this.showTooltip(event.target, tooltipText);
-        },
-        
-        
-        // 格式化时间显示
-        formatDateTime(dateTimeStr) {
-            if (!dateTimeStr) return '未设置';
-            
-            try {
-                const date = new Date(dateTimeStr);
-                return date.toLocaleString('zh-CN', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
-            } catch (e) {
-                return dateTimeStr;
-            }
         }
-        
+
     }
 }).mount('#monitorManagerApp');

@@ -35,7 +35,6 @@ com\shixin\entity\MonitorTaskListDTO.class
 com\shixin\controller\RootController.class
 com\shixin\controller\HomeController.class
 com\shixin\entity\TaskExecutionRecord.class
-com\shixin\test\test_1.class
 com\shixin\entity\UserAllInfoDTO$UserBaseInfo.class
 com\shixin\controller\AccountController.class
 com\shixin\repository\NotificationRepository.class
@@ -43,7 +42,6 @@ com\shixin\repository\MonitorTaskRepository.class
 com\shixin\config\OptionalUrlsAutoReloadConfig.class
 com\shixin\repository\TaskExecutionRecordRepository.class
 com\shixin\repository\MonitorUrlRepository.class
-com\shixin\test\test.class
 com\shixin\repository\TaskScheduleConfigRepository.class
 com\shixin\App.class
 com\shixin\entity\NotificationWithTaskNameDTO.class
